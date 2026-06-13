@@ -9,7 +9,7 @@
 <title>DAME — EDT</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MCA5MiI+CiAgPHBvbHlnb24gcG9pbnRzPSI0MCw0IDc2LDI0IDc2LDY4IDQwLDg4IDQsNjggNCwyNCIgZmlsbD0iIzJjNGE2ZSIvPgogIDx0ZXh0IHg9IjQwIiB5PSI0NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxBcmlhbCxzYW5zLXNlcmlmIiBmb250LXNpemU9IjE4IiBmb250LXdlaWdodD0iODAwIiBmaWxsPSJ3aGl0ZSI+REFNRTwvdGV4dD4KICA8dGV4dCB4PSI0MCIgeT0iNjQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWksQXJpYWwsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjYpIiBsZXR0ZXItc3BhY2luZz0iNCI+RURUPC90ZXh0Pgo8L3N2Zz4=">
     <link rel="shortcut icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MCA5MiI+CiAgPHBvbHlnb24gcG9pbnRzPSI0MCw0IDc2LDI0IDc2LDY4IDQwLDg4IDQsNjggNCwyNCIgZmlsbD0iIzJjNGE2ZSIvPgogIDx0ZXh0IHg9IjQwIiB5PSI0NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxBcmlhbCxzYW5zLXNlcmlmIiBmb250LXNpemU9IjE4IiBmb250LXdlaWdodD0iODAwIiBmaWxsPSJ3aGl0ZSI+REFNRTwvdGV4dD4KICA8dGV4dCB4PSI0MCIgeT0iNjQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWksQXJpYWwsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjYpIiBsZXR0ZXItc3BhY2luZz0iNCI+RURUPC90ZXh0Pgo8L3N2Zz4=">
-<!-- VERSION 2.1 - educateur sans mot de passe -->
+<!-- VERSION 1.0 -->
 <style>
 /* ── RESET & BASE ── */
 *{box-sizing:border-box;margin:0;padding:0}
@@ -104,19 +104,19 @@ a{color:var(--blue);text-decoration:none}
 .page{display:none}.page.on{display:block}
 
 /* ── RIGHT PANEL ── */
-#rpanel{width:160px;background:var(--white);border-left:1px solid var(--gray-border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+#rpanel{width:200px;background:var(--white);border-left:1px solid var(--gray-border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
 .rp-tabs{display:flex;border-bottom:1px solid var(--gray-border)}
 .rptab{flex:1;padding:8px 4px;font-size:11px;font-weight:700;text-align:center;border:none;background:none;color:var(--gray);border-bottom:2px solid transparent}
 .rptab.on{color:var(--blue);border-bottom-color:var(--blue)}
 .rp-body{flex:1;overflow-y:auto;padding:8px}
-.rp-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}
-.ptile{display:inline-flex;flex-direction:column;align-items:center;gap:2px;cursor:grab;user-select:none;position:relative;width:66px}
+.rp-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px;justify-content:flex-start}
+.ptile{display:inline-flex;flex-direction:column;align-items:center;gap:3px;cursor:grab;user-select:none;position:relative;width:calc(50% - 4px)}
 .ptile.dragging{opacity:.3}
-.pimg{width:56px;height:56px;border-radius:6px;background:#e5e7eb;border:1.5px solid var(--gray-border);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--gray);overflow:hidden;transition:transform .1s}
+.pimg{width:100%;aspect-ratio:1/1;border-radius:6px;background:#e5e7eb;border:1.5px solid var(--gray-border);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--gray);overflow:hidden;transition:transform .1s}
 .ptile:hover .pimg{transform:scale(1.04);border-color:var(--blue)}
 .pimg img{width:100%;height:100%;object-fit:cover;border-radius:5px;pointer-events:none}
 .ptile.edu .pimg{background:#fef3c7;border-color:#d97706;color:#92400e}
-.pname{font-size:10px;font-weight:600;color:var(--text);text-align:center;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none}
+.pname{font-size:10px;font-weight:600;color:var(--text);text-align:center;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none;line-height:1.3}
 .pbadge{position:absolute;top:-5px;right:-5px;background:var(--red);color:var(--white);font-size:9px;font-weight:700;min-width:17px;height:17px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 3px;border:2px solid var(--white);pointer-events:none}
 .pbadge.hide{display:none}
 .pdel{position:absolute;top:-4px;left:-4px;background:rgba(0,0,0,.5);border:none;color:var(--white);font-size:8px;padding:2px 3px;border-radius:3px;opacity:0;transition:opacity .15s}
