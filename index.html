@@ -879,18 +879,16 @@ function renderPanel(){
   var edus=getEdus();
   document.getElementById('rpY').innerHTML=youngs.map(function(y){
     var n=cntP('young',y.id);
-    return '<div class="ptile" draggable="true" ondragstart="sD(\''+y.id+'\',\'young\',null,event)" ondragend="eD(event)">'+
+    return '<div class="ptile" title="'+y.n+'" draggable="true" ondragstart="sD(\''+y.id+'\',\'young\',null,event)" ondragend="eD(event)">'+
       '<div class="pimg">'+(y.p?'<img src="'+y.p+'">':ini(y.n))+'</div>'+
-      '<div class="pname">'+y.n+'</div>'+
       '<div class="pbadge'+(n===0?' hide':'')+'">'+n+'</div>'+
       '<button class="pdel admin-only" onclick="delP(\'young\',\''+y.id+'\',event)">✕</button></div>';
   }).join('')||'<div style="font-size:11px;color:var(--gray)">Aucun jeune enregistré.</div>';
 
   document.getElementById('rpE').innerHTML=edus.map(function(e){
     var n=cntP('edu',e.id);
-    return '<div class="ptile edu" draggable="true" ondragstart="sD(\''+e.id+'\',\'edu\',null,event)" ondragend="eD(event)">'+
+    return '<div class="ptile edu" title="'+e.n+'" draggable="true" ondragstart="sD(\''+e.id+'\',\'edu\',null,event)" ondragend="eD(event)">'+
       '<div class="pimg">'+(e.p?'<img src="'+e.p+'">':ini(e.n))+'</div>'+
-      '<div class="pname">'+e.n+'</div>'+
       '<div class="pbadge'+(n===0?' hide':'')+'">'+n+'</div>'+
       '<button class="pdel admin-only" onclick="delP(\'edu\',\''+e.id+'\',event)">✕</button></div>';
   }).join('')||'<div style="font-size:11px;color:var(--gray)">Aucun éducateur enregistré.</div>';
