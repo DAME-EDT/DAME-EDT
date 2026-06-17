@@ -181,6 +181,16 @@ body.is-admin .admin-only{display:block}
 .echip .cx{position:absolute;top:-7px;right:-7px;background:var(--white);border:1px solid var(--gray-border);color:var(--text2);font-size:11px;line-height:1;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:auto!important;box-shadow:0 1px 4px rgba(0,0,0,.18)}
 .echip:hover .cx{opacity:1}
 
+/* Ligne de séparation fusionnable */
+.s-merge-row td{padding:0!important;height:6px;background:var(--gray-border)}
+.s-merge-row td.s-rowhead{background:var(--blue)}
+.s-merge-btn{width:100%;height:6px;background:transparent;border:none;cursor:pointer;display:block;transition:background .15s;position:relative}
+.s-merge-btn:hover{background:rgba(90,138,198,.35)}
+.s-merge-btn::after{content:attr(data-tip);position:absolute;left:50%;transform:translateX(-50%);top:-22px;background:#333;color:#fff;font-size:10px;padding:2px 7px;border-radius:4px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s;z-index:99}
+.s-merge-btn:hover::after{opacity:1}
+body.is-admin .s-merge-btn{cursor:pointer}
+body:not(.is-admin) .s-merge-btn{pointer-events:none}
+
 /* Period navigation */
 .period-nav{display:flex;align-items:center;justify-content:center;gap:16px;padding:6px 0 14px}
 .period-arrow{background:var(--white);border:1.5px solid var(--gray-border);border-radius:6px;padding:6px 16px;font-size:12px;font-weight:600;color:var(--blue);cursor:pointer;font-family:var(--font)}
@@ -550,13 +560,73 @@ function cntP(type,id){
 }
 
 // ════════════════════════════════════════════════
-// FIREBASE
+// FIREBASE — Split léger/photos
 // ════════════════════════════════════════════════
-// ── Firebase REST helpers ──
+var _saving=false;
+var _lastHash='';
+var _photos={}; // stockage local des photos : {id: base64}
+
+// ── Gestion photos : localStorage + Firebase /photos ──
+function loadPhotos(){
+  try{var r=localStorage.getItem('apaei-edt-photos');if(r)_photos=JSON.parse(r);}catch(e){}
+}
+function savePhoto(id,b64){
+  _photos[id]=b64;
+  try{localStorage.setItem('apaei-edt-photos',JSON.stringify(_photos));}catch(e){}
+  // Écrire la photo dans Firebase /photos/ID (chemin séparé du planning)
+  fbWrite('/photos/'+id,b64,null);
+}
+function deletePhoto(id){
+  delete _photos[id];
+  try{localStorage.setItem('apaei-edt-photos',JSON.stringify(_photos));}catch(e){}
+  fbWrite('/photos/'+id,null,null);
+}
+function getPhoto(id){return _photos[id]||'';}
+
+// Charger toutes les photos depuis Firebase /photos (une seule fois au démarrage)
+function loadPhotosFromFirebase(cb){
+  fbRead('/photos',function(err,data){
+    if(err||!data){if(cb)cb();return;}
+    // data = {id1: base64, id2: base64, ...}
+    var photos=data;
+    if(typeof photos==='object'&&!Array.isArray(photos)){
+      Object.keys(photos).forEach(function(id){
+        if(photos[id]&&photos[id].length>10){
+          _photos[id]=photos[id];
+        }
+      });
+    }
+    try{localStorage.setItem('apaei-edt-photos',JSON.stringify(_photos));}catch(e){}
+    if(cb)cb();
+  });
+}
+
+// Créer une version SANS photos pour Firebase (légère)
+function stripPhotos(obj){
+  if(!obj||typeof obj!=='object')return obj;
+  if(Array.isArray(obj))return obj.map(stripPhotos);
+  var r={};
+  Object.keys(obj).forEach(function(k){
+    if(k==='p')r[k]=''; // remplace la photo par une chaîne vide
+    else r[k]=stripPhotos(obj[k]);
+  });
+  return r;
+}
+// Réinjecter les photos depuis _photos dans les données
+function injectPhotos(obj){
+  if(!obj||typeof obj!=='object')return obj;
+  if(Array.isArray(obj))return obj.map(injectPhotos);
+  var r={};
+  Object.keys(obj).forEach(function(k){ r[k]=injectPhotos(obj[k]); });
+  // Si c'est une personne (a un id et un champ p), injecter la photo
+  if(r.id&&'p' in r&&_photos[r.id]){r.p=_photos[r.id];}
+  return r;
+}
+
 function fbRead(path,cb){
   var xhr=new XMLHttpRequest();
   xhr.open('GET',FB+path+'.json?t='+Date.now(),true);
-  xhr.timeout=10000;
+  xhr.timeout=15000;
   xhr.onreadystatechange=function(){
     if(xhr.readyState!==4)return;
     if(xhr.status===200){try{cb(null,JSON.parse(xhr.responseText));}catch(e){cb(e,null);}}
@@ -569,7 +639,7 @@ function fbWrite(path,data,cb){
   var xhr=new XMLHttpRequest();
   xhr.open('PUT',FB+path+'.json',true);
   xhr.setRequestHeader('Content-Type','application/json');
-  xhr.timeout=10000;
+  xhr.timeout=15000;
   xhr.onreadystatechange=function(){
     if(xhr.readyState!==4)return;
     if(xhr.status===200){if(cb)cb(null);}
@@ -579,21 +649,16 @@ function fbWrite(path,data,cb){
   xhr.send(JSON.stringify(data));
 }
 
-// ── Sync automatique toutes les 3 secondes ──
-var _saving=false;
-var _lastHash='';
-
 function dataHash(d){
-  // Simple hash to detect real changes and avoid useless re-renders
   try{
     var s=JSON.stringify(d);
     var h=0;
-    for(var i=0;i<Math.min(s.length,500);i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0;}
+    for(var i=0;i<Math.min(s.length,2000);i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0;}
     return h+'_'+s.length;
   }catch(e){return '';}
 }
 
-function startSSE(){startPolling();}  // alias
+function startSSE(){startPolling();}
 
 function startPolling(){
   if(syncTimer)clearInterval(syncTimer);
@@ -603,15 +668,24 @@ function startPolling(){
       if(err){setSS('err');return;}
       if(!data)return;
       var h=dataHash(data);
-      if(h===_lastHash)return; // rien de nouveau, pas de re-render
+      if(h===_lastHash)return;
       _lastHash=h;
+      // Réinjecter photos locales dans les données reçues
       sanitizeAll(data);
       S=Object.assign(S,data);
-      try{localStorage.setItem('apaei-edt',JSON.stringify(S));}catch(ex){}
+      // Réinjecter photos locales (elles ne viennent pas du poll)
+      function pollReinject(obj){
+        if(!obj||typeof obj!=='object')return;
+        if(Array.isArray(obj)){obj.forEach(pollReinject);return;}
+        if(obj.id&&'p' in obj&&_photos[obj.id])obj.p=_photos[obj.id];
+        Object.values(obj).forEach(pollReinject);
+      }
+      pollReinject(S);
+      try{localStorage.setItem('apaei-edt',JSON.stringify(stripPhotos(S)));}catch(ex){}
       setSS('ok');
       render();
     });
-  },3000);
+  },4000);
 }
 
 function sanitizeArr(v){
@@ -620,9 +694,10 @@ function sanitizeArr(v){
   return Object.values(v).filter(Boolean);
 }
 function sanitizeSched(d){
-  if(!d)return{acts:mkActs(),cols:mkCols(),cells:{}};
+  if(!d)return{acts:mkActs(),cols:mkCols(),cells:{},slotMerges:{}};
   d.acts=sanitizeArr(d.acts);
   d.cells=d.cells||{};
+  d.slotMerges=d.slotMerges||{};
   Object.keys(d.cells).forEach(function(k){d.cells[k]=sanitizeArr(d.cells[k]);});
   d.cols=d.cols||mkCols();
   DAYS.forEach(function(day){
@@ -681,36 +756,77 @@ function sanitizeAll(data){
 
 function loadFromFirebase(){
   setSS('spin');
-  fbRead('/edt',function(err,data){
-    if(err){setSS('err');loadLocal();render();startPolling();return;}
-    if(data){
-      sanitizeAll(data);
-      S=Object.assign(S,data);
-    } else {
-      saveToFirebase();
-    }
-    _lastHash=dataHash(S);
-    try{localStorage.setItem('apaei-edt',JSON.stringify(S));}catch(e){}
-    setSS('ok');
-    render();
-    // Démarrer la sync automatique
-    startPolling();
+  // 1. Charger les photos Firebase d'abord (une seule fois)
+  loadPhotosFromFirebase(function(){
+    // 2. Puis charger le planning (sans photos, léger)
+    fbRead('/edt',function(err,data){
+      if(err){setSS('err');loadLocal();render();startPolling();return;}
+      if(data){
+        sanitizeAll(data);
+        S=Object.assign(S,data);
+      } else {
+        saveToFirebase();
+      }
+      // 3. Réinjecter les photos dans les personnes
+      function reinjectAll(obj){
+        if(!obj||typeof obj!=='object')return;
+        if(Array.isArray(obj)){obj.forEach(reinjectAll);return;}
+        if(obj.id&&'p' in obj&&_photos[obj.id])obj.p=_photos[obj.id];
+        Object.values(obj).forEach(reinjectAll);
+      }
+      reinjectAll(S);
+      _lastHash=dataHash(S);
+      try{localStorage.setItem('apaei-edt',JSON.stringify(stripPhotos(S)));}catch(e){}
+      setSS('ok');
+      render();
+      startPolling();
+    });
   });
 }
 function saveToFirebase(cb){
   _saving=true;
   setSS('spin');
-  try{localStorage.setItem('apaei-edt',JSON.stringify(S));}catch(e){}
-  var snap=JSON.parse(JSON.stringify(S));
-  fbWrite('/edt',snap,function(err){
+  // Extraire et sauvegarder les photos localement
+  extractAndSavePhotos(S);
+  // Envoyer version SANS photos à Firebase (beaucoup plus léger)
+  var light=stripPhotos(JSON.parse(JSON.stringify(S)));
+  try{localStorage.setItem('apaei-edt',JSON.stringify(light));}catch(e){}
+  fbWrite('/edt',light,function(err){
     _saving=false;
-    if(!err)_lastHash=dataHash(snap); // évite un re-render inutile au prochain poll
+    if(!err)_lastHash=dataHash(light);
     setSS(err?'err':'ok');
     if(cb)cb(err);
   });
 }
+// Extraire toutes les photos base64 des personnes et les mettre dans _photos
+function extractAndSavePhotos(data){
+  function extract(obj){
+    if(!obj||typeof obj!=='object')return;
+    if(Array.isArray(obj)){obj.forEach(extract);return;}
+    if(obj.id&&obj.p&&obj.p.length>100){
+      savePhoto(obj.id,obj.p); // sauvegarder en local
+    }
+    Object.values(obj).forEach(extract);
+  }
+  extract(data);
+}
 function loadLocal(){
-  try{var r=localStorage.getItem('apaei-edt');if(r){var d=JSON.parse(r);sanitizeAll(d);S=Object.assign(S,d);}}catch(e){}
+  try{
+    var r=localStorage.getItem('apaei-edt');
+    if(r){
+      var d=JSON.parse(r);
+      sanitizeAll(d);
+      S=Object.assign(S,d);
+      // Réinjecter photos
+      function reinjectLocal(obj){
+        if(!obj||typeof obj!=='object')return;
+        if(Array.isArray(obj)){obj.forEach(reinjectLocal);return;}
+        if(obj.id&&'p' in obj&&_photos[obj.id])obj.p=_photos[obj.id];
+        Object.values(obj).forEach(reinjectLocal);
+      }
+      reinjectLocal(S);
+    }
+  }catch(e){}
 }
 function startSync(){
   loadFromFirebase();
@@ -975,6 +1091,33 @@ function unmergeCells(d,dayId,colId,period){
   delete d.cells[mergedKey];
   if(ids.length)d.cells[ck(dayId,colId,ids[0])]=union;
 }
+// Toggle fusion entre deux créneaux consécutifs pour TOUTES les colonnes du jour
+function toggleSlotMerge(dayId,slotA,slotB){
+  var d=cur();if(!d)return;
+  var cols=sanitizeArr(d.cols[dayId]);
+  var key='merge_'+dayId+'_'+slotA+'_'+slotB;
+  var isMerged=d.slotMerges&&d.slotMerges[key];
+  if(!d.slotMerges)d.slotMerges={};
+  if(isMerged){
+    // Défusionner : déplacer jeunes de slotA vers slotA uniquement
+    delete d.slotMerges[key];
+  } else {
+    // Fusionner : marquer la fusion, les jeunes de slotA couvriront les deux
+    d.slotMerges[key]=true;
+    // Déplacer les jeunes de slotB vers slotA (fusion)
+    cols.forEach(function(col){
+      if(!col||col.closed)return;
+      var kA=ck(dayId,col.id,slotA);
+      var kB=ck(dayId,col.id,slotB);
+      var yB=sanitizeArr(d.cells[kB]);
+      if(yB.length){
+        d.cells[kA]=sanitizeArr(d.cells[kA]).concat(yB);
+        d.cells[kB]=[];
+      }
+    });
+  }
+  saveToFirebase();render();
+}
 function toggleColClosed(dayId,colId){
   var d=cur();if(!d)return;
   var col=sanitizeArr(d.cols[dayId]).find(function(c){return c&&c.id===colId;});
@@ -1094,7 +1237,33 @@ function buildDay(dayId){
   h+='</tr></thead><tbody>';
 
   activeSlots.forEach(function(slot,idx){
-    h+='<tr><td class="s-rowhead'+(slot.apm?' apm':'')+'"><span class="s-time">'+slot.t+'</span></td>';
+    // Insert merge separator between slots (admin only)
+    if(idx>0&&session.role==='admin'){
+      var prevSlot=activeSlots[idx-1];
+      var mergeKey='merge_'+dayId+'_'+prevSlot.id+'_'+slot.id;
+      var isMerged=(d.slotMerges&&d.slotMerges[mergeKey])?true:false;
+      var tip=isMerged?'Cliquer pour séparer les créneaux':'Cliquer pour fusionner ces créneaux';
+      h+='<tr class="s-merge-row">'+
+        '<td class="s-rowhead" style="height:6px;padding:0"></td>'+
+        Array(cols.length+2).fill('<td style="padding:0"><button class="s-merge-btn" data-tip="'+tip+'" onclick="toggleSlotMerge(\''+dayId+'\',\''+prevSlot.id+'\',\''+slot.id+'\')" style="background:'+(isMerged?'rgba(90,138,198,.18)':'transparent')+'"></button></td>').join('')+
+      '</tr>';
+    }
+    // Check if previous slot is merged with this one → skip rendering this row
+    if(idx>0){
+      var ps=activeSlots[idx-1];
+      var mk='merge_'+dayId+'_'+ps.id+'_'+slot.id;
+      if(d.slotMerges&&d.slotMerges[mk]){
+        return; // skip this row entirely — merged with previous
+      }
+    }
+    // Calculate rowspan if this slot is merged with next
+    var rspan=1;
+    if(idx<activeSlots.length-1){
+      var ns=activeSlots[idx+1];
+      var nk='merge_'+dayId+'_'+slot.id+'_'+ns.id;
+      if(d.slotMerges&&d.slotMerges[nk])rspan=2;
+    }
+    h+='<tr><td class="s-rowhead'+(slot.apm?' apm':'')+'"'+(rspan>1?' rowspan="'+rspan+'"':'')+' style="vertical-align:middle"><span class="s-time">'+slot.t+(rspan>1?' – '+activeSlots[idx+1].t.split(' – ')[1]:'')+'</span></td>';
     cols.forEach(function(col){
       if(col.closed){
         if(idx===0)h+='<td class="s-cell s-closed-cell" rowspan="'+activeSlots.length+'"></td>';
@@ -1115,23 +1284,31 @@ function buildDay(dayId){
         return;
       }
       var key=ck(dayId,col.id,slot.id);
-      var chips=sanitizeArr(d.cells[key]).map(function(yid){
-        var y=getP('young',yid);if(!y)return'';
-        return '<div class="chip" title="'+y.n+'" draggable="true" ondragstart="sD(\''+yid+'\',\'young\',\''+key+'\',event)" ondragend="eD(event)">'+
-          '<div class="chav">'+(y.p?'<img src="'+y.p+'">':ini(y.n))+'</div>'+
-          '<button class="cx admin-only" onclick="rmY(\''+key+'\',\''+yid+'\',event)">✕</button></div>';
-      }).join('');
-      h+='<td class="s-cell"><div class="drop" ondragover="aD(event)" ondrop="dropY(\''+key+'\',event)" ondragenter="dzIn(this,event)" ondragleave="dzOut(this,event)">'+chips+'</div></td>';
+      var allKeys=[key];
+      if(rspan>1&&idx+1<activeSlots.length)allKeys.push(ck(dayId,col.id,activeSlots[idx+1].id));
+      var chips=allKeys.reduce(function(acc,k){
+        return acc.concat(sanitizeArr(d.cells[k]).map(function(yid){
+          var y=getP('young',yid);if(!y)return'';
+          return '<div class="chip" title="'+y.n+'" draggable="true" ondragstart="sD(\''+yid+'\',\'young\',\''+k+'\',event)" ondragend="eD(event)">'+
+            '<div class="chav">'+(y.p?'<img src="'+y.p+'">':ini(y.n))+'</div>'+
+            '<button class="cx admin-only" onclick="rmY(\''+k+'\',\''+yid+'\',event)">✕</button></div>';
+        }));
+      },[]).join('');
+      h+='<td class="s-cell"'+(rspan>1?' rowspan="'+rspan+'"':'')+'><div class="drop" ondragover="aD(event)" ondrop="dropY(\''+key+'\',event)" ondragenter="dzIn(this,event)" ondragleave="dzOut(this,event)">'+chips+'</div></td>';
     });
-    // Sortie column
+    // Colonne Sortie
     var sk=ck(dayId,SC,slot.id);
-    var sc2=sanitizeArr(d.cells[sk]).map(function(yid){
-      var y=getP('young',yid);if(!y)return'';
-      return '<div class="chip" title="'+y.n+'" draggable="true" ondragstart="sD(\''+yid+'\',\'young\',\''+sk+'\',event)" ondragend="eD(event)">'+
-        '<div class="chav">'+(y.p?'<img src="'+y.p+'">':ini(y.n))+'</div>'+
-        '<button class="cx admin-only" onclick="rmY(\''+sk+'\',\''+yid+'\',event)">✕</button></div>';
-    }).join('');
-    h+='<td class="s-cell sortie"><div class="drop" ondragover="aD(event)" ondrop="dropY(\''+sk+'\',event)" ondragenter="dzIn(this,event)" ondragleave="dzOut(this,event)">'+sc2+'</div></td>';
+    var skAll=[sk];
+    if(rspan>1&&idx+1<activeSlots.length)skAll.push(ck(dayId,SC,activeSlots[idx+1].id));
+    var sc2=skAll.reduce(function(acc,k){
+      return acc.concat(sanitizeArr(d.cells[k]).map(function(yid){
+        var y=getP('young',yid);if(!y)return'';
+        return '<div class="chip" title="'+y.n+'" draggable="true" ondragstart="sD(\''+yid+'\',\'young\',\''+k+'\',event)" ondragend="eD(event)">'+
+          '<div class="chav">'+(y.p?'<img src="'+y.p+'">':ini(y.n))+'</div>'+
+          '<button class="cx admin-only" onclick="rmY(\''+k+'\',\''+yid+'\',event)">✕</button></div>';
+      }));
+    },[]).join('');
+    h+='<td class="s-cell sortie"'+(rspan>1?' rowspan="'+rspan+'"':'')+'><div class="drop" ondragover="aD(event)" ondrop="dropY(\''+sk+'\',event)" ondragenter="dzIn(this,event)" ondragleave="dzOut(this,event)">'+sc2+'</div></td>';
     h+='<td style="background:var(--gray-light)"></td></tr>';
   });
 
@@ -1325,8 +1502,17 @@ function savePerson(){
   var ps=sitePersons();
   var arr=editPerson.type==='young'?ps.young:ps.edu;
   if(!Array.isArray(arr)){arr=[];if(editPerson.type==='young')ps.young=arr;else ps.edu=arr;}
-  if(editPerson.id){var o=arr.find(function(x){return x.id===editPerson.id;});if(o){o.n=n;if(photoData)o.p=photoData;}}
-  else arr.push({id:uid(),n:n,p:photoData||''});
+  if(editPerson.id){
+    var o=arr.find(function(x){return x.id===editPerson.id;});
+    if(o){
+      o.n=n;
+      if(photoData){o.p=photoData;savePhoto(o.id,photoData);}
+    }
+  } else {
+    var newId=uid();
+    if(photoData)savePhoto(newId,photoData);
+    arr.push({id:newId,n:n,p:photoData||''});
+  }
   cl('m-person');saveToFirebase();render();
 }
 function delP(type,id,e){
@@ -1334,6 +1520,7 @@ function delP(type,id,e){
   var ps=sitePersons();
   var key=type==='young'?'young':'edu';
   ps[key]=sanitizeArr(ps[key]).filter(function(x){return x.id!==id;});
+  deletePhoto(id); // supprimer aussi la photo de Firebase
   saveToFirebase();render();
 }
 
@@ -1364,6 +1551,7 @@ document.addEventListener('keydown',function(e){
 document.querySelectorAll('.mbk').forEach(function(el){el.addEventListener('click',function(e){if(e.target===el)cl(el.id);});});
 
 // Init
+loadPhotos(); // charger les photos locales d'abord
 loadLocal();
 scheduleWeeklyBackup();
 </script>
