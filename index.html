@@ -272,6 +272,9 @@ body:not(.is-admin) .s-merge-btn{pointer-events:none}
 body.edu-mode .admin-only{display:none!important}
 body.edu-mode .act-lbl{cursor:default;pointer-events:none}
 body.edu-mode .add-act-btn,.edu-mode .s-addcolbtn,.edu-mode .rp-add{display:none}
+/* Les educateurs peuvent déplacer et supprimer des jeunes dans le tableau */
+body.edu-mode .chip .cx{opacity:0}
+body.edu-mode .chip:hover .cx{opacity:1}
 
 @media print{
   #topbar,#navtabs,#rpanel,.admin-only,#daytabs{display:none!important}
@@ -703,7 +706,7 @@ function startPolling(){
       if(!data)return;
       // Ignorer les données Firebase pendant 2 secondes après une sauvegarde locale
       // pour éviter que le poll n'écrase l'affichage local
-      if(Date.now()-_savedAt<2000){setSS('ok');return;}
+      if(Date.now()-_savedAt<500){setSS('ok');return;}
       var h=dataHash(data);
       if(h===_lastHash){setSS('ok');return;}
       _lastHash=h;
@@ -720,7 +723,7 @@ function startPolling(){
       setSS('ok');
       render();
     });
-  },1000);
+  },500);
 }
 
 function sanitizeArr(v){
@@ -830,7 +833,7 @@ function saveToFirebase(cb){
   try{localStorage.setItem('apaei-edt',JSON.stringify(light));}catch(e){}
   fbWrite('/edt',light,function(err){
     _saving=false;
-    if(!err)_lastHash=dataHash(light);
+    if(!err){_lastHash=dataHash(light);}
     setSS(err?'err':'ok');
     if(cb)cb(err);
   });
@@ -1352,7 +1355,7 @@ function buildDay(dayId){
             var y=getP('young',yid);if(!y)return'';
             return '<div class="chip" title="'+y.n+'" draggable="true" ondragstart="sD(\''+yid+'\',\'young\',\''+mkey+'\',event)" ondragend="eD(event)">'+
               '<div class="chav">'+(y.p?'<img src="'+y.p+'">':ini(y.n))+'</div>'+
-              '<button class="cx admin-only" onclick="rmY(\''+mkey+'\',\''+yid+'\',event)">✕</button></div>';
+              '<button class="cx" onclick="rmY(\''+mkey+'\',\''+yid+'\',event)">✕</button></div>';
           }).join('');
           h+='<td class="s-cell" rowspan="'+activeSlots.length+'"><div class="drop" ondragover="aD(event)" ondrop="dropY(\''+mkey+'\',event)" ondragenter="dzIn(this,event)" ondragleave="dzOut(this,event)">'+mchips+'</div></td>';
         }
@@ -1384,7 +1387,7 @@ function buildDay(dayId){
           var y=getP('young',yid);if(!y)return'';
           return '<div class="chip" title="'+y.n+'" draggable="true" ondragstart="sD(\''+yid+'\',\'young\',\''+k+'\',event)" ondragend="eD(event)">'+
             '<div class="chav">'+(y.p?'<img src="'+y.p+'">':ini(y.n))+'</div>'+
-            '<button class="cx admin-only" onclick="rmY(\''+k+'\',\''+yid+'\',event)">✕</button></div>';
+            '<button class="cx" onclick="rmY(\''+k+'\',\''+yid+'\',event)">✕</button></div>';
         }));
       },[]).join('');
 
@@ -1412,7 +1415,7 @@ function buildDay(dayId){
       var y=getP('young',yid);if(!y)return'';
       return '<div class="chip" title="'+y.n+'" draggable="true" ondragstart="sD(\''+yid+'\',\'young\',\''+sk+'\',event)" ondragend="eD(event)">'+
         '<div class="chav">'+(y.p?'<img src="'+y.p+'">':ini(y.n))+'</div>'+
-        '<button class="cx admin-only" onclick="rmY(\''+sk+'\',\''+yid+'\',event)">✕</button></div>';
+        '<button class="cx" onclick="rmY(\''+sk+'\',\''+yid+'\',event)">✕</button></div>';
     }).join('');
     h+='<td class="s-cell sortie"><div class="drop" ondragover="aD(event)" data-key="'+sk+'" ondrop="dropY(\''+sk+'\',event)" ondragenter="dzIn(this,event)" ondragleave="dzOut(this,event)">'+sc2+'</div></td>';
     // Cellule absents
@@ -1421,7 +1424,7 @@ function buildDay(dayId){
       var y=getP('young',yid);if(!y)return'';
       return '<div class="chip" title="'+y.n+'" draggable="true" ondragstart="sD(\''+yid+'\',\'young\',\''+ak+'\',event)" ondragend="eD(event)">'+
         '<div class="chav">'+(y.p?'<img src="'+y.p+'">':ini(y.n))+'</div>'+
-        '<button class="cx admin-only" onclick="rmY(\''+ak+'\',\''+yid+'\',event)">✕</button></div>';
+        '<button class="cx" onclick="rmY(\''+ak+'\',\''+yid+'\',event)">✕</button></div>';
     }).join('');
     h+='<td class="s-cell absent"><div class="drop" ondragover="aD(event)" data-key="'+ak+'" ondrop="dropY(\''+ak+'\',event)" ondragenter="dzIn(this,event)" ondragleave="dzOut(this,event)">'+absChips+'</div></td>';
     h+='<td style="background:var(--gray-light)"></td></tr>';
@@ -1488,7 +1491,7 @@ function makeChip(yid,key){
   var d2=document.createElement('div');
   d2.className='chip';d2.draggable=true;d2.title=y.n;
   var btn=document.createElement('button');
-  btn.className='cx admin-only';
+  btn.className='cx';
   btn.textContent='\u2715';
   btn.addEventListener('click',function(ev){rmY(key,yid,ev);});
   var av=document.createElement('div');
@@ -1546,9 +1549,12 @@ function dropE(dayId,colId,e){
   render();saveToFirebase();
 }
 function rmY(key,yid,e){
-  e.stopPropagation();var d=cur();if(!d)return;
+  e.stopPropagation();
+  var d=cur();if(!d)return;
   var a=sanitizeArr(d.cells[key]);var i=a.indexOf(yid);if(i>-1)a.splice(i,1);d.cells[key]=a;
-  render();saveToFirebase();
+  updateDropZone(key);
+  renderPanel();
+  saveToFirebase();
 }
 function rmEC(dayId,colId,eid,e){
   e.stopPropagation();var d=cur();if(!d)return;
