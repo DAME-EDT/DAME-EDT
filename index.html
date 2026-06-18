@@ -181,7 +181,7 @@ body.is-admin .admin-only{display:block}
 .echip .cx{position:absolute;top:-7px;right:-7px;background:var(--white);border:1px solid var(--gray-border);color:var(--text2);font-size:11px;line-height:1;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:auto!important;box-shadow:0 1px 4px rgba(0,0,0,.18)}
 .echip:hover .cx{opacity:1}
 
-/* Ligne de séparation fusionnable */
+/* Ligne de séparation fusionnable / masquable */
 .s-merge-row td{padding:0!important;height:6px;background:var(--gray-border)}
 .s-merge-row td.s-rowhead{background:var(--blue)}
 .s-merge-btn{width:100%;height:6px;background:transparent;border:none;cursor:pointer;display:block;transition:background .15s;position:relative}
@@ -190,6 +190,16 @@ body.is-admin .admin-only{display:block}
 .s-merge-btn:hover::after{opacity:1}
 body.is-admin .s-merge-btn{cursor:pointer}
 body:not(.is-admin) .s-merge-btn{pointer-events:none}
+/* Bouton masquer/afficher créneau */
+.s-slot-btn{display:inline-flex;align-items:center;gap:4px;background:none;border:1px solid var(--gray-border);border-radius:4px;padding:2px 6px;font-size:10px;color:var(--gray);cursor:pointer;margin-left:6px;vertical-align:middle}
+.s-slot-btn:hover{border-color:var(--red);color:var(--red)}
+.col-fuse-btn{position:absolute;bottom:3px;right:3px;background:var(--white);border:1px solid var(--gray-border);border-radius:4px;font-size:13px;line-height:1;padding:1px 4px;cursor:pointer;opacity:0;transition:opacity .15s;z-index:5;color:var(--blue)}
+.col-fuse-btn.col-fuse-on{opacity:1;background:var(--blue-pale);border-color:var(--blue);color:var(--blue)}
+.s-cell:hover .col-fuse-btn{opacity:1}
+.col-fuse-btn:hover{background:var(--blue);color:var(--white)!important;opacity:1}
+.s-slot-restore{background:none;border:1px dashed var(--gray-border);border-radius:4px;padding:3px 8px;font-size:10px;color:var(--gray);cursor:pointer;width:100%;text-align:center}
+.s-slot-restore:hover{border-color:var(--blue);color:var(--blue)}
+.s-hidden-row td{background:#f8f9fa;height:28px;vertical-align:middle}
 
 /* Period navigation */
 .period-nav{display:flex;align-items:center;justify-content:center;gap:16px;padding:6px 0 14px}
@@ -701,10 +711,11 @@ function sanitizeArr(v){
   return Object.values(v).filter(Boolean);
 }
 function sanitizeSched(d){
-  if(!d)return{acts:mkActs(),cols:mkCols(),cells:{},slotMerges:{}};
+  if(!d)return{acts:mkActs(),cols:mkCols(),cells:{},slotMerges:{},hiddenSlots:{}};
   d.acts=sanitizeArr(d.acts);
   d.cells=d.cells||{};
   d.slotMerges=d.slotMerges||{};
+  d.hiddenSlots=d.hiddenSlots||{};
   Object.keys(d.cells).forEach(function(k){d.cells[k]=sanitizeArr(d.cells[k]);});
   d.cols=d.cols||mkCols();
   DAYS.forEach(function(day){
@@ -1125,6 +1136,39 @@ function toggleSlotMerge(dayId,slotA,slotB){
   }
   saveToFirebase();render();
 }
+// Fusion par colonne individuelle
+function toggleColSlotMerge(dayId,colId,slotA,slotB,e){
+  if(e)e.stopPropagation();
+  var d=cur();if(!d)return;
+  if(!d.slotMerges)d.slotMerges={};
+  var key='colmerge_'+dayId+'_'+colId+'_'+slotA+'_'+slotB;
+  if(d.slotMerges[key]){
+    delete d.slotMerges[key];
+    // Remettre les jeunes du créneau fusionné dans le bon créneau
+    var kA=ck(dayId,colId,slotA);
+    var kB=ck(dayId,colId,slotB);
+    // Garder tout dans slotA (ils peuvent être redéplacés manuellement)
+  } else {
+    d.slotMerges[key]=true;
+    // Fusionner les jeunes de slotB dans slotA
+    var kA2=ck(dayId,colId,slotA);
+    var kB2=ck(dayId,colId,slotB);
+    var yB=sanitizeArr(d.cells[kB2]);
+    if(yB.length){
+      d.cells[kA2]=sanitizeArr(d.cells[kA2]).concat(yB);
+      d.cells[kB2]=[];
+    }
+  }
+  saveToFirebase();render();
+}
+function toggleSlotHidden(dayId,slotId){
+  var d=cur();if(!d)return;
+  if(!d.hiddenSlots)d.hiddenSlots={};
+  var key=dayId+'_'+slotId;
+  if(d.hiddenSlots[key])delete d.hiddenSlots[key];
+  else d.hiddenSlots[key]=true;
+  saveToFirebase();render();
+}
 function toggleColClosed(dayId,colId){
   var d=cur();if(!d)return;
   var col=sanitizeArr(d.cols[dayId]).find(function(c){return c&&c.id===colId;});
@@ -1244,38 +1288,35 @@ function buildDay(dayId){
   h+='</tr></thead><tbody>';
 
   activeSlots.forEach(function(slot,idx){
-    // Insert merge separator between slots (admin only)
-    if(idx>0&&session.role==='admin'){
-      var prevSlot=activeSlots[idx-1];
-      var mergeKey='merge_'+dayId+'_'+prevSlot.id+'_'+slot.id;
-      var isMerged=(d.slotMerges&&d.slotMerges[mergeKey])?true:false;
-      var tip=isMerged?'Cliquer pour séparer les créneaux':'Cliquer pour fusionner ces créneaux';
-      h+='<tr class="s-merge-row">'+
-        '<td class="s-rowhead" style="height:6px;padding:0"></td>'+
-        Array(cols.length+2).fill('<td style="padding:0"><button class="s-merge-btn" data-tip="'+tip+'" onclick="toggleSlotMerge(\''+dayId+'\',\''+prevSlot.id+'\',\''+slot.id+'\')" style="background:'+(isMerged?'rgba(90,138,198,.18)':'transparent')+'"></button></td>').join('')+
-      '</tr>';
-    }
-    // Check if previous slot is merged with this one → skip rendering this row
-    if(idx>0){
-      var ps=activeSlots[idx-1];
-      var mk='merge_'+dayId+'_'+ps.id+'_'+slot.id;
-      if(d.slotMerges&&d.slotMerges[mk]){
-        return; // skip this row entirely — merged with previous
+    // Masqué ?
+    var hidKey=dayId+'_'+slot.id;
+    var isHidden=d.hiddenSlots&&d.hiddenSlots[hidKey];
+    if(isHidden){
+      if(session.role==='admin'){
+        h+='<tr class="s-hidden-row"><td class="s-rowhead'+(slot.apm?' apm':'')+'" style="padding:4px 8px;opacity:.5">'+
+          '<span class="s-time" style="font-size:10px">'+slot.t+'</span></td>'+
+          '<td colspan="'+(cols.length+2)+'"><button class="s-slot-restore" onclick="toggleSlotHidden(\''+dayId+'\',\''+slot.id+'\')">+ Afficher</button></td></tr>';
       }
+      return;
     }
-    // Calculate rowspan if this slot is merged with next
-    var rspan=1;
-    if(idx<activeSlots.length-1){
-      var ns=activeSlots[idx+1];
-      var nk='merge_'+dayId+'_'+slot.id+'_'+ns.id;
-      if(d.slotMerges&&d.slotMerges[nk])rspan=2;
-    }
-    h+='<tr><td class="s-rowhead'+(slot.apm?' apm':'')+'"'+(rspan>1?' rowspan="'+rspan+'"':'')+' style="vertical-align:middle"><span class="s-time">'+slot.t+(rspan>1?' – '+activeSlots[idx+1].t.split(' – ')[1]:'')+'</span></td>';
+
+    // Fusionné avec le créneau précédent au niveau du JOUR (ligne entière) ?
+    var dayMergeKey='merge_day_'+dayId+'_'+(idx>0?activeSlots[idx-1].id:'')+'_'+slot.id;
+    // (on n'utilise plus la fusion par jour — on la fait par colonne)
+
+    h+='<tr>';
+    // Cellule horaire
+    h+='<td class="s-rowhead'+(slot.apm?' apm':'')+'" style="vertical-align:middle">'+
+      '<span class="s-time">'+slot.t+'</span>'+
+      (session.role==='admin'&&idx>0?'':'')+ // pas de bouton masquer sur la 1ère ligne
+    '</td>';
+
     cols.forEach(function(col){
       if(col.closed){
         if(idx===0)h+='<td class="s-cell s-closed-cell" rowspan="'+activeSlots.length+'"></td>';
         return;
       }
+      // Fusion globale col (mergeAM/mergePM)
       var merge=currentPeriod==='am'?col.mergeAM:col.mergePM;
       if(merge){
         if(idx===0){
@@ -1290,9 +1331,27 @@ function buildDay(dayId){
         }
         return;
       }
+
+      // Fusion par colonne individuelle (nouveau système)
+      if(idx>0){
+        var prevSlot=activeSlots[idx-1];
+        var colMergeKey='colmerge_'+dayId+'_'+col.id+'_'+prevSlot.id+'_'+slot.id;
+        var colMerged=d.slotMerges&&d.slotMerges[colMergeKey];
+        if(colMerged)return; // cette cellule est absorbée par la case du dessus (rowspan)
+      }
+
+      // Calculer rowspan pour CETTE colonne
+      var colRspan=1;
+      if(idx<activeSlots.length-1){
+        var nextSlot=activeSlots[idx+1];
+        var colMergeKeyNext='colmerge_'+dayId+'_'+col.id+'_'+slot.id+'_'+nextSlot.id;
+        if(d.slotMerges&&d.slotMerges[colMergeKeyNext])colRspan=2;
+      }
+
       var key=ck(dayId,col.id,slot.id);
+      // Si rowspan 2, collecter aussi les jeunes du créneau suivant
       var allKeys=[key];
-      if(rspan>1&&idx+1<activeSlots.length)allKeys.push(ck(dayId,col.id,activeSlots[idx+1].id));
+      if(colRspan>1)allKeys.push(ck(dayId,col.id,activeSlots[idx+1].id));
       var chips=allKeys.reduce(function(acc,k){
         return acc.concat(sanitizeArr(d.cells[k]).map(function(yid){
           var y=getP('young',yid);if(!y)return'';
@@ -1301,21 +1360,34 @@ function buildDay(dayId){
             '<button class="cx admin-only" onclick="rmY(\''+k+'\',\''+yid+'\',event)">✕</button></div>';
         }));
       },[]).join('');
-      h+='<td class="s-cell"'+(rspan>1?' rowspan="'+rspan+'"':'')+'><div class="drop" ondragover="aD(event)" ondrop="dropY(\''+key+'\',event)" ondragenter="dzIn(this,event)" ondragleave="dzOut(this,event)">'+chips+'</div></td>';
+
+      // Bouton fusion en bas de la cellule (admin only, si pas dernière ligne)
+      var fuseBtn='';
+      if(session.role==='admin'&&idx<activeSlots.length-1&&colRspan===1){
+        var nextSl=activeSlots[idx+1];
+        var fKey='colmerge_'+dayId+'_'+col.id+'_'+slot.id+'_'+nextSl.id;
+        fuseBtn='<button class="col-fuse-btn" onclick="toggleColSlotMerge(\''+dayId+'\',\''+col.id+'\',\''+slot.id+'\',\''+nextSl.id+'\',event)" title="Fusionner avec le créneau suivant">⊕</button>';
+      } else if(session.role==='admin'&&colRspan>1){
+        var nextSl2=activeSlots[idx+1];
+        var fKey2='colmerge_'+dayId+'_'+col.id+'_'+slot.id+'_'+nextSl2.id;
+        fuseBtn='<button class="col-fuse-btn col-fuse-on" onclick="toggleColSlotMerge(\''+dayId+'\',\''+col.id+'\',\''+slot.id+'\',\''+nextSl2.id+'\',event)" title="Séparer les créneaux">⊖</button>';
+      }
+
+      h+='<td class="s-cell"'+(colRspan>1?' rowspan="'+colRspan+'"':'')+' style="position:relative">'+
+        '<div class="drop" ondragover="aD(event)" ondrop="dropY(\''+key+'\',event)" ondragenter="dzIn(this,event)" ondragleave="dzOut(this,event)">'+chips+'</div>'+
+        fuseBtn+
+      '</td>';
     });
-    // Colonne Sortie
+
+    // Colonne Sortie (pas de fusion individuelle)
     var sk=ck(dayId,SC,slot.id);
-    var skAll=[sk];
-    if(rspan>1&&idx+1<activeSlots.length)skAll.push(ck(dayId,SC,activeSlots[idx+1].id));
-    var sc2=skAll.reduce(function(acc,k){
-      return acc.concat(sanitizeArr(d.cells[k]).map(function(yid){
-        var y=getP('young',yid);if(!y)return'';
-        return '<div class="chip" title="'+y.n+'" draggable="true" ondragstart="sD(\''+yid+'\',\'young\',\''+k+'\',event)" ondragend="eD(event)">'+
-          '<div class="chav">'+(y.p?'<img src="'+y.p+'">':ini(y.n))+'</div>'+
-          '<button class="cx admin-only" onclick="rmY(\''+k+'\',\''+yid+'\',event)">✕</button></div>';
-      }));
-    },[]).join('');
-    h+='<td class="s-cell sortie"'+(rspan>1?' rowspan="'+rspan+'"':'')+'><div class="drop" ondragover="aD(event)" ondrop="dropY(\''+sk+'\',event)" ondragenter="dzIn(this,event)" ondragleave="dzOut(this,event)">'+sc2+'</div></td>';
+    var sc2=sanitizeArr(d.cells[sk]).map(function(yid){
+      var y=getP('young',yid);if(!y)return'';
+      return '<div class="chip" title="'+y.n+'" draggable="true" ondragstart="sD(\''+yid+'\',\'young\',\''+sk+'\',event)" ondragend="eD(event)">'+
+        '<div class="chav">'+(y.p?'<img src="'+y.p+'">':ini(y.n))+'</div>'+
+        '<button class="cx admin-only" onclick="rmY(\''+sk+'\',\''+yid+'\',event)">✕</button></div>';
+    }).join('');
+    h+='<td class="s-cell sortie"><div class="drop" ondragover="aD(event)" ondrop="dropY(\''+sk+'\',event)" ondragenter="dzIn(this,event)" ondragleave="dzOut(this,event)">'+sc2+'</div></td>';
     h+='<td style="background:var(--gray-light)"></td></tr>';
   });
 
