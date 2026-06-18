@@ -706,12 +706,13 @@ function startPolling(){
       if(!data)return;
       // Ignorer les données Firebase pendant 2 secondes après une sauvegarde locale
       // pour éviter que le poll n'écrase l'affichage local
-      if(Date.now()-_savedAt<500){setSS('ok');return;}
+      if(Date.now()-_savedAt<1500){setSS('ok');return;}
       var h=dataHash(data);
       if(h===_lastHash){setSS('ok');return;}
       _lastHash=h;
       sanitizeAll(data);
       S=Object.assign(S,data);
+      // Réinjecter photos
       function pollReinject(obj){
         if(!obj||typeof obj!=='object')return;
         if(Array.isArray(obj)){obj.forEach(pollReinject);return;}
@@ -719,11 +720,15 @@ function startPolling(){
         Object.values(obj).forEach(pollReinject);
       }
       pollReinject(S);
-      try{localStorage.setItem('apaei-edt',JSON.stringify(stripPhotos(S)));}catch(ex){}
+      try{localStorage.setItem('apaei-edt',JSON.stringify(S));}catch(ex){}
       setSS('ok');
-      render();
+      // Mise à jour partielle : seulement le jour courant + le panel
+      renderPanel();
+      var curPage=document.querySelector('.page.on');
+      if(curPage){curPage.innerHTML=buildDay(currentDay);}
+      else{renderPages();}
     });
-  },500);
+  },2000);
 }
 
 function sanitizeArr(v){
@@ -826,17 +831,24 @@ function saveToFirebase(cb){
   _saving=true;
   _savedAt=Date.now();
   setSS('spin');
-  // Extraire et sauvegarder les photos localement
-  extractAndSavePhotos(S);
-  // Envoyer version SANS photos à Firebase (beaucoup plus léger)
-  var light=stripPhotos(JSON.parse(JSON.stringify(S)));
-  try{localStorage.setItem('apaei-edt',JSON.stringify(light));}catch(e){}
-  fbWrite('/edt',light,function(err){
-    _saving=false;
-    if(!err){_lastHash=dataHash(light);}
-    setSS(err?'err':'ok');
-    if(cb)cb(err);
-  });
+  // Différer le travail lourd APRÈS l'affichage instantané (via setTimeout 0)
+  setTimeout(function(){
+    try{localStorage.setItem('apaei-edt',JSON.stringify(S));}catch(e){}
+    // Construire version légère sans photos pour Firebase
+    var light={};
+    try{
+      var str=JSON.stringify(S);
+      // Remplacer les photos base64 par chaîne vide (regex rapide)
+      str=str.replace(/"p":"data:[^"]{20,}"/g,'"p":""');
+      light=JSON.parse(str);
+    }catch(e){light=S;}
+    fbWrite('/edt',light,function(err){
+      _saving=false;
+      if(!err){_lastHash=dataHash(light);}
+      setSS(err?'err':'ok');
+      if(cb)cb(err);
+    });
+  },0);
 }
 // Extraire toutes les photos base64 des personnes et les mettre dans _photos
 function extractAndSavePhotos(data){
