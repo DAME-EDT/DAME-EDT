@@ -1090,8 +1090,11 @@ function renderDayTabs(){
 }
 function swDay(id){
   currentDay=id;
+  // Mettre à jour les onglets immédiatement
   document.querySelectorAll('.dtab').forEach(function(b,i){b.classList.toggle('on',DAYS[i].id===id);});
-  document.querySelectorAll('.page').forEach(function(p){p.classList.toggle('on',p.dataset.day===id);});
+  // Régénérer toutes les pages et le panel instantanément (local, sans attendre Firebase)
+  renderPages();
+  renderPanel();
 }
 
 // ── Periode (Matin / Apres-midi) ──
