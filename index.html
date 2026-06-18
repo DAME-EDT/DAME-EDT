@@ -587,6 +587,7 @@ function cntP(type,id){
 // FIREBASE — Split léger/photos
 // ════════════════════════════════════════════════
 var _saving=false;
+var _savedAt=0; // timestamp de la dernière sauvegarde locale
 var _lastHash='';
 var _photos={}; // stockage local des photos : {id: base64}
 
@@ -700,6 +701,9 @@ function startPolling(){
       }
       _errCount=0;
       if(!data)return;
+      // Ignorer les données Firebase pendant 2 secondes après une sauvegarde locale
+      // pour éviter que le poll n'écrase l'affichage local
+      if(Date.now()-_savedAt<2000){setSS('ok');return;}
       var h=dataHash(data);
       if(h===_lastHash){setSS('ok');return;}
       _lastHash=h;
@@ -817,6 +821,7 @@ function loadFromFirebase(){
 }
 function saveToFirebase(cb){
   _saving=true;
+  _savedAt=Date.now();
   setSS('spin');
   // Extraire et sauvegarder les photos localement
   extractAndSavePhotos(S);
@@ -1396,7 +1401,7 @@ function buildDay(dayId){
       }
 
       h+='<td class="s-cell"'+(colRspan>1?' rowspan="'+colRspan+'"':'')+' style="position:relative">'+
-        '<div class="drop" ondragover="aD(event)" ondrop="dropY(\''+key+'\',event)" ondragenter="dzIn(this,event)" ondragleave="dzOut(this,event)">'+chips+'</div>'+
+        '<div class="drop" ondragover="aD(event)" data-key="'+key+'" ondrop="dropY(\''+key+'\',event)" ondragenter="dzIn(this,event)" ondragleave="dzOut(this,event)">'+chips+'</div>'+
         fuseBtn+
       '</td>';
     });
@@ -1409,7 +1414,7 @@ function buildDay(dayId){
         '<div class="chav">'+(y.p?'<img src="'+y.p+'">':ini(y.n))+'</div>'+
         '<button class="cx admin-only" onclick="rmY(\''+sk+'\',\''+yid+'\',event)">✕</button></div>';
     }).join('');
-    h+='<td class="s-cell sortie"><div class="drop" ondragover="aD(event)" ondrop="dropY(\''+sk+'\',event)" ondragenter="dzIn(this,event)" ondragleave="dzOut(this,event)">'+sc2+'</div></td>';
+    h+='<td class="s-cell sortie"><div class="drop" ondragover="aD(event)" data-key="'+sk+'" ondrop="dropY(\''+sk+'\',event)" ondragenter="dzIn(this,event)" ondragleave="dzOut(this,event)">'+sc2+'</div></td>';
     // Cellule absents
     var ak=ck(dayId,AC,slot.id);
     var absChips=sanitizeArr(d.cells[ak]||[]).map(function(yid){
@@ -1418,7 +1423,7 @@ function buildDay(dayId){
         '<div class="chav">'+(y.p?'<img src="'+y.p+'">':ini(y.n))+'</div>'+
         '<button class="cx admin-only" onclick="rmY(\''+ak+'\',\''+yid+'\',event)">✕</button></div>';
     }).join('');
-    h+='<td class="s-cell absent"><div class="drop" ondragover="aD(event)" ondrop="dropY(\''+ak+'\',event)" ondragenter="dzIn(this,event)" ondragleave="dzOut(this,event)">'+absChips+'</div></td>';
+    h+='<td class="s-cell absent"><div class="drop" ondragover="aD(event)" data-key="'+ak+'" ondrop="dropY(\''+ak+'\',event)" ondragenter="dzIn(this,event)" ondragleave="dzOut(this,event)">'+absChips+'</div></td>';
     h+='<td style="background:var(--gray-light)"></td></tr>';
   });
 
@@ -1478,15 +1483,52 @@ function sD(id,tp,fr,e){dg={id:id,tp:tp,fr:fr};e.currentTarget.classList.add('dr
 function eD(e){e.currentTarget.classList.remove('dragging');document.querySelectorAll('.dov').forEach(function(el){el.classList.remove('dov');el.dataset.dc=0;});}
 function aD(e){e.preventDefault();}
 
+function makeChip(yid,key){
+  var y=getP('young',yid);if(!y)return null;
+  var d2=document.createElement('div');
+  d2.className='chip';d2.draggable=true;d2.title=y.n;
+  var btn=document.createElement('button');
+  btn.className='cx admin-only';
+  btn.textContent='\u2715';
+  btn.addEventListener('click',function(ev){rmY(key,yid,ev);});
+  var av=document.createElement('div');
+  av.className='chav';av.style.pointerEvents='none';
+  if(y.p){var img=document.createElement('img');img.src=y.p;img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:4px;pointer-events:none';av.appendChild(img);}
+  else{av.textContent=ini(y.n);}
+  d2.appendChild(av);d2.appendChild(btn);
+  d2.addEventListener('dragstart',function(ev){sD(yid,'young',key,ev);});
+  d2.addEventListener('dragend',eD);
+  return d2;
+}
+function updateDropZone(key){
+  var d=cur();if(!d)return;
+  document.querySelectorAll('.drop[data-key="'+key+'"]').forEach(function(el){
+    el.innerHTML='';
+    sanitizeArr(d.cells[key]||[]).forEach(function(yid){
+      var chip=makeChip(yid,key);
+      if(chip)el.appendChild(chip);
+    });
+  });
+}
 function dropY(key,e){
   e.preventDefault();
+  document.querySelectorAll('.dov').forEach(function(el){el.classList.remove('dov');el.dataset.dc=0;});
   if(!dg.id||dg.tp!=='young')return;
   var d=cur();if(!d)return;
-  if(dg.fr&&dg.fr.indexOf('__')>0){var a=sanitizeArr(d.cells[dg.fr]);var i=a.indexOf(dg.id);if(i>-1){a.splice(i,1);d.cells[dg.fr]=a;}}
-  d.cells[key]=sanitizeArr(d.cells[key]);
-  d.cells[key].push(dg.id);
+  var fromKey=dg.fr&&dg.fr.indexOf('__')>0?dg.fr:null;
+  var yid=dg.id;
   dg={id:null,tp:null,fr:null};
-  render();saveToFirebase();
+  if(fromKey){
+    var a=sanitizeArr(d.cells[fromKey]);
+    var i=a.indexOf(yid);if(i>-1)a.splice(i,1);
+    d.cells[fromKey]=a;
+    updateDropZone(fromKey); // mise à jour instantanée de la case source
+  }
+  d.cells[key]=sanitizeArr(d.cells[key]);
+  d.cells[key].push(yid);
+  updateDropZone(key); // mise à jour instantanée de la case cible
+  renderPanel();        // mise à jour des badges
+  saveToFirebase();     // sauvegarde en arrière-plan
 }
 function dropE(dayId,colId,e){
   e.preventDefault();
