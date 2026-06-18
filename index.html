@@ -1219,7 +1219,7 @@ function renderPanel(){
   var edus=getEdus();
   document.getElementById('rpY').innerHTML=youngs.map(function(y){
     var n=cntP('young',y.id);
-    return '<div class="ptile" draggable="true" ondragstart="sD(\''+y.id+'\',\'young\',null,event)" ondragend="eD(event)">'+
+    return '<div class="ptile" data-yid="'+y.id+'" draggable="true" ondragstart="sD(\''+y.id+'\',\'young\',null,event)" ondragend="eD(event)">'+
       '<div class="pimg">'+(y.p?'<img src="'+y.p+'">':ini(y.n))+'</div>'+
       '<div class="pname">'+y.n+'</div>'+
       '<div class="pbadge'+(n===0?' hide':'')+'">'+n+'</div>'+
@@ -1502,9 +1502,9 @@ function makeChip(yid,key){
   var y=getP('young',yid);if(!y)return null;
   var d2=document.createElement('div');
   d2.className='chip';d2.draggable=true;d2.title=y.n;
+  d2.dataset.yid=yid;d2.dataset.key=key;
   var btn=document.createElement('button');
-  btn.className='cx';
-  btn.textContent='\u2715';
+  btn.className='cx';btn.textContent='\u2715';
   btn.addEventListener('click',function(ev){rmY(key,yid,ev);});
   var av=document.createElement('div');
   av.className='chav';av.style.pointerEvents='none';
@@ -1525,6 +1525,14 @@ function updateDropZone(key){
     });
   });
 }
+// Update only badge number for a person tile in the panel (no full rebuild)
+function updateBadge(yid){
+  var n=cntP('young',yid);
+  document.querySelectorAll('.ptile[data-yid="'+yid+'"] .pbadge').forEach(function(b){
+    b.textContent=n;
+    b.classList.toggle('hide',n===0);
+  });
+}
 function dropY(key,e){
   e.preventDefault();
   document.querySelectorAll('.dov').forEach(function(el){el.classList.remove('dov');el.dataset.dc=0;});
@@ -1533,17 +1541,36 @@ function dropY(key,e){
   var fromKey=dg.fr&&dg.fr.indexOf('__')>0?dg.fr:null;
   var yid=dg.id;
   dg={id:null,tp:null,fr:null};
+  // ── Tentative de déplacer le chip DOM existant (0ms) ──
+  var existingChip=document.querySelector('.chip[data-yid="'+yid+'"]');
+  var targetDrop=document.querySelector('.drop[data-key="'+key+'"]');
+  if(existingChip&&targetDrop&&fromKey){
+    // Déplacer le chip DOM directement — aucune reconstruction
+    existingChip.dataset.key=key;
+    // Mettre à jour le handler rmY
+    var btn=existingChip.querySelector('.cx');
+    if(btn){btn.onclick=function(ev){rmY(key,yid,ev);};}
+    // Mettre à jour dragstart
+    existingChip.ondragstart=null;
+    existingChip.addEventListener('dragstart',function(ev){sD(yid,'young',key,ev);});
+    targetDrop.appendChild(existingChip);
+  } else if(targetDrop){
+    // Pas de chip existant (vient du panneau) — créer un nouveau chip
+    var newChip=makeChip(yid,key);
+    if(newChip)targetDrop.appendChild(newChip);
+  }
+  // Mettre à jour l'état S
   if(fromKey){
     var a=sanitizeArr(d.cells[fromKey]);
     var i=a.indexOf(yid);if(i>-1)a.splice(i,1);
     d.cells[fromKey]=a;
-    updateDropZone(fromKey); // mise à jour instantanée de la case source
   }
   d.cells[key]=sanitizeArr(d.cells[key]);
   d.cells[key].push(yid);
-  updateDropZone(key); // mise à jour instantanée de la case cible
-  renderPanel();        // mise à jour des badges
-  saveToFirebase();     // sauvegarde en arrière-plan
+  // Mettre à jour uniquement le badge de ce jeune (pas tout le panel)
+  updateBadge(yid);
+  // Sauvegarder en arrière-plan
+  saveToFirebase();
 }
 function dropE(dayId,colId,e){
   e.preventDefault();
