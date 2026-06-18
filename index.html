@@ -1151,7 +1151,7 @@ function toggleSlotMerge(dayId,slotA,slotB){
       }
     });
   }
-  saveToFirebase();render();
+  render();saveToFirebase();
 }
 // Fusion par colonne individuelle
 function toggleColSlotMerge(dayId,colId,slotA,slotB,e){
@@ -1176,7 +1176,7 @@ function toggleColSlotMerge(dayId,colId,slotA,slotB,e){
       d.cells[kB2]=[];
     }
   }
-  saveToFirebase();render();
+  render();saveToFirebase();
 }
 function toggleSlotHidden(dayId,slotId){
   var d=cur();if(!d)return;
@@ -1184,14 +1184,14 @@ function toggleSlotHidden(dayId,slotId){
   var key=dayId+'_'+slotId;
   if(d.hiddenSlots[key])delete d.hiddenSlots[key];
   else d.hiddenSlots[key]=true;
-  saveToFirebase();render();
+  render();saveToFirebase();
 }
 function toggleColClosed(dayId,colId){
   var d=cur();if(!d)return;
   var col=sanitizeArr(d.cols[dayId]).find(function(c){return c&&c.id===colId;});
   if(!col)return;
   col.closed=!col.closed;
-  saveToFirebase();render();
+  render();saveToFirebase();
 }
 
 function renderPanel(){
@@ -1461,7 +1461,7 @@ function importJson(e){
   var f=e.target.files[0];if(!f)return;
   var r=new FileReader();
   r.onload=function(ev){
-    try{var d=JSON.parse(ev.target.result);sanitizeAll(d);S=Object.assign(S,d);saveToFirebase();render();renderAdmin();ntf('Import réussi.');}
+    try{var d=JSON.parse(ev.target.result);sanitizeAll(d);S=Object.assign(S,d);render();saveToFirebase();renderAdmin();ntf('Import réussi.');}
     catch(err){ntf('Fichier invalide.');}
   };
   r.readAsText(f);
@@ -1486,7 +1486,7 @@ function dropY(key,e){
   d.cells[key]=sanitizeArr(d.cells[key]);
   d.cells[key].push(dg.id);
   dg={id:null,tp:null,fr:null};
-  saveToFirebase();render();
+  render();saveToFirebase();
 }
 function dropE(dayId,colId,e){
   e.preventDefault();
@@ -1501,18 +1501,18 @@ function dropE(dayId,colId,e){
   if(colId===SC){d.cols[dayId+'_se']=sanitizeArr(d.cols[dayId+'_se']);d.cols[dayId+'_se'].push(dg.id);}
   else{var col=sanitizeArr(d.cols[dayId]).find(function(c){return c&&c.id===colId;});if(col){col.e=sanitizeArr(col.e);col.e.push(dg.id);}}
   dg={id:null,tp:null,fr:null};
-  saveToFirebase();render();
+  render();saveToFirebase();
 }
 function rmY(key,yid,e){
   e.stopPropagation();var d=cur();if(!d)return;
   var a=sanitizeArr(d.cells[key]);var i=a.indexOf(yid);if(i>-1)a.splice(i,1);d.cells[key]=a;
-  saveToFirebase();render();
+  render();saveToFirebase();
 }
 function rmEC(dayId,colId,eid,e){
   e.stopPropagation();var d=cur();if(!d)return;
   if(colId===SC){var arr=sanitizeArr(d.cols[dayId+'_se']);var i=arr.indexOf(eid);if(i>-1)arr.splice(i,1);d.cols[dayId+'_se']=arr;}
   else{var col=sanitizeArr(d.cols[dayId]).find(function(c){return c&&c.id===colId;});if(col){col.e=sanitizeArr(col.e);var i2=col.e.indexOf(eid);if(i2>-1)col.e.splice(i2,1);}}
-  saveToFirebase();render();
+  render();saveToFirebase();
 }
 
 // ════════════════════════════════════════════════
@@ -1522,7 +1522,7 @@ function addCol(dayId){
   var d=cur();if(!d)return;
   d.cols[dayId]=sanitizeArr(d.cols[dayId]);
   d.cols[dayId].push({id:uid(),ai:'',e:[]});
-  saveToFirebase();render();
+  render();saveToFirebase();
 }
 function openC(dayId,colId){
   var d=cur();if(!d)return;
@@ -1552,14 +1552,14 @@ function createAct(){
   var col=sanitizeArr(d.cols[editColKey.dayId]).find(function(c){return c&&c.id===editColKey.colId;});
   if(col)col.ai=a.id;
   openC(editColKey.dayId,editColKey.colId);
-  saveToFirebase();render();ntf('Activité créée.');
+  render();saveToFirebase();ntf('Activité créée.');
 }
 function delAct(id){
   if(!confirm('Supprimer cette activité ?'))return;
   var d=cur();if(!d)return;
   d.acts=sanitizeArr(d.acts).filter(function(a){return a.id!==id;});
   DAYS.forEach(function(day){sanitizeArr(d.cols[day.id]).forEach(function(c){if(c&&c.ai===id)c.ai='';});});
-  openC(editColKey.dayId,editColKey.colId);saveToFirebase();render();
+  openC(editColKey.dayId,editColKey.colId);render();saveToFirebase();
 }
 function saveCol(){
   var d=cur();if(!d)return;
@@ -1575,7 +1575,7 @@ function saveCol(){
   if(!newPM&&col.mergePM)unmergeCells(d,editColKey.dayId,col.id,'pm');
   col.mergeAM=newAM;
   col.mergePM=newPM;
-  cl('m-col');saveToFirebase();render();
+  cl('m-col');render();saveToFirebase();
 }
 function delCol(){
   if(!confirm('Supprimer cette colonne ?'))return;
@@ -1583,7 +1583,7 @@ function delCol(){
   var dayId=editColKey.dayId,colId=editColKey.colId;
   d.cols[dayId]=sanitizeArr(d.cols[dayId]).filter(function(c){return c&&c.id!==colId;});
   Object.keys(d.cells).forEach(function(k){if(k.startsWith(dayId+'__'+colId+'__'))delete d.cells[k];});
-  cl('m-col');saveToFirebase();render();
+  cl('m-col');render();saveToFirebase();
 }
 
 // ════════════════════════════════════════════════
@@ -1623,7 +1623,7 @@ function savePerson(){
     if(photoData)savePhoto(newId,photoData);
     arr.push({id:newId,n:n,p:photoData||''});
   }
-  cl('m-person');saveToFirebase();render();
+  cl('m-person');render();saveToFirebase();
 }
 function delP(type,id,e){
   e.stopPropagation();if(!confirm('Supprimer ?'))return;
@@ -1631,7 +1631,7 @@ function delP(type,id,e){
   var key=type==='young'?'young':'edu';
   ps[key]=sanitizeArr(ps[key]).filter(function(x){return x.id!==id;});
   deletePhoto(id); // supprimer aussi la photo de Firebase
-  saveToFirebase();render();
+  render();saveToFirebase();
 }
 
 // ════════════════════════════════════════════════
