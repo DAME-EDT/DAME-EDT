@@ -135,7 +135,7 @@ body.is-admin .admin-only{display:block}
 .s-colinner{padding:7px 8px 6px;display:flex;flex-direction:column;gap:5px}
 .s-sortiecol{background:#f9fafb;width:auto}
 .s-sortie-lbl{font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;background:#f3f4f6;color:var(--gray);border:1px solid var(--gray-border);display:inline-block}
-.edu-zone{min-height:58px;border-radius:5px;padding:6px;background:#fffbeb;border:1px solid #d97706;display:flex;flex-direction:row;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center}
+.edu-zone{min-height:72px;border-radius:5px;padding:6px;background:#fffbeb;border:1px solid #d97706;display:flex;flex-direction:row;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center}
 .edu-zone *{pointer-events:none}
 .echip{pointer-events:auto!important}
 .edu-zone.dov{background:#fef3c7;border-color:#b45309}
@@ -160,22 +160,22 @@ body.is-admin .admin-only{display:block}
 .s-cell{background:var(--white);vertical-align:top;padding:6px;height:1px}
 .s-cell.sortie{background:#f9fafb}
 .s-cell.repas-cell{background:#f3f4f6;text-align:center;vertical-align:middle;font-size:12px;color:var(--gray)}
-.drop{min-height:96px;border-radius:5px;padding:6px;display:grid;grid-template-columns:1fr 1fr;gap:8px;align-content:start}
+.drop{min-height:80px;border-radius:5px;padding:6px;display:flex;flex-wrap:wrap;gap:6px;align-content:start}
 .drop *{pointer-events:none}
 .chip{pointer-events:auto!important}
 .drop.dov{background:var(--blue-pale);outline:2px dashed var(--blue)}
-.chip{display:inline-flex;flex-direction:column;align-items:center;gap:0;border-radius:8px;padding:0;cursor:grab;user-select:none;border:none;background:transparent;position:relative;width:100%}
+.chip{display:inline-flex;flex-direction:column;align-items:center;gap:0;border-radius:6px;padding:0;cursor:grab;user-select:none;border:none;background:transparent;position:relative;width:58px}
 .chip:hover .chav{outline:2px solid var(--blue);outline-offset:1px}
 .chip.dragging{opacity:.3}
-.chav{width:100%;aspect-ratio:1/1;border-radius:8px;background:#e5e7eb;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:var(--gray);overflow:hidden;pointer-events:none;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.chav{width:58px;height:58px;border-radius:6px;background:#e5e7eb;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--gray);overflow:hidden;pointer-events:none;box-shadow:0 1px 3px rgba(0,0,0,.1)}
 .chav img{width:100%;height:100%;object-fit:cover;border-radius:8px;pointer-events:none}
 .chname{font-size:10px;font-weight:700;color:var(--text);text-align:center;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none}
 .cx{position:absolute;top:-7px;right:-7px;background:var(--white);border:1px solid var(--gray-border);color:var(--text2);font-size:11px;line-height:1;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;pointer-events:auto!important;box-shadow:0 1px 4px rgba(0,0,0,.18)}
 .chip:hover .cx{opacity:1}
-.echip{display:inline-flex;flex-direction:column;align-items:center;gap:0;border-radius:8px;padding:0;cursor:grab;user-select:none;border:none;background:transparent;position:relative;pointer-events:auto!important}
+.echip{display:inline-flex;flex-direction:column;align-items:center;gap:0;border-radius:6px;padding:0;cursor:grab;user-select:none;border:none;background:transparent;position:relative;pointer-events:auto!important;width:58px}
 .echip:hover .echav{outline:2px solid #92400e;outline-offset:1px}
 .echip.dragging{opacity:.3}
-.echav{width:46px;height:46px;border-radius:8px;background:#fde68a;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#92400e;overflow:hidden;pointer-events:none;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.echav{width:58px;height:58px;border-radius:6px;background:#fde68a;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#92400e;overflow:hidden;pointer-events:none;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.1)}
 .echav img{width:100%;height:100%;object-fit:cover;border-radius:8px;pointer-events:none}
 .echname{font-size:11px;font-weight:600;color:#92400e;pointer-events:none;white-space:nowrap}
 .echip .cx{position:absolute;top:-7px;right:-7px;background:var(--white);border:1px solid var(--gray-border);color:var(--text2);font-size:11px;line-height:1;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:auto!important;box-shadow:0 1px 4px rgba(0,0,0,.18)}
