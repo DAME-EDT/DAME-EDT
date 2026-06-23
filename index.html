@@ -712,7 +712,6 @@ body.edu-mode .chip:hover .cx{opacity:1}
 // ════════════════════════════════════════════════
 // CONFIGURATION
 // ════════════════════════════════════════════════
-// Firebase remplacé par API locale (voir API_URL ci-dessus)
 var ADMIN_PW     = 'EDT2026';    // Mot de passe administrateur principal
 var ADMIN_RDV_PW = 'RDV2026';    // Mot de passe administrateur rendez-vous
 
@@ -865,38 +864,45 @@ function cntP(type,id){
 // ════════════════════════════════════════════════
 // ════════════════════════════════════════════════
 // API LOCALE (PostgreSQL)
-// Changez API_URL selon votre installation :
-//   En local Windows    → http://localhost:3000
-//   Sur réseau interne  → http://192.168.x.x:3000
 // ════════════════════════════════════════════════
-var API_URL = 'http://localhost:3000';
+// ── Firebase REST API (GitHub Pages) ──
+var FB = 'https://emploi-du-temps-c6063-default-rtdb.europe-west1.firebasedatabase.app';
 
-function apiCall(method,path,data,cb){
+function fbRead(path,cb){
   var xhr=new XMLHttpRequest();
-  xhr.open(method,API_URL+path,true);
-  xhr.setRequestHeader('Content-Type','application/json');
+  xhr.open('GET',FB+path+'.json?t='+Date.now(),true);
   xhr.timeout=15000;
   xhr.onreadystatechange=function(){
     if(xhr.readyState!==4)return;
-    if(xhr.status>=200&&xhr.status<300){
-      try{cb(null,xhr.responseText?JSON.parse(xhr.responseText):null);}
-      catch(e){cb(e,null);}
+    if(xhr.status===200){
+      try{cb(null,JSON.parse(xhr.responseText));}catch(e){cb(e,null);}
+    } else if(xhr.status===401||xhr.status===403){
+      setSS('rules');cb(new Error('rules'),null);
     } else {
       cb(new Error('HTTP '+xhr.status),null);
     }
   };
   xhr.ontimeout=function(){cb(new Error('timeout'),null);};
   xhr.onerror=function(){cb(new Error('network'),null);};
-  xhr.send(data!=null?JSON.stringify(data):null);
-}
-function fbRead(path,cb){
-  // /edt → GET /edt  |  /photos → GET /photos
-  apiCall('GET',path,null,cb);
+  xhr.send();
 }
 function fbWrite(path,data,cb){
-  // /edt → PUT /edt  |  /photos/ID → PUT /photos/ID  |  null data → DELETE
-  if(data===null){apiCall('DELETE',path,null,cb);}
-  else{apiCall('PUT',path,data,cb);}
+  var xhr=new XMLHttpRequest();
+  if(data===null){
+    xhr.open('DELETE',FB+path+'.json',true);
+  } else {
+    xhr.open('PUT',FB+path+'.json',true);
+    xhr.setRequestHeader('Content-Type','application/json');
+  }
+  xhr.timeout=15000;
+  xhr.onreadystatechange=function(){
+    if(xhr.readyState!==4)return;
+    if(xhr.status>=200&&xhr.status<300){if(cb)cb(null);}
+    else{if(cb)cb(new Error('HTTP '+xhr.status));}
+  };
+  xhr.ontimeout=function(){if(cb)cb(new Error('timeout'));};
+  xhr.onerror=function(){if(cb)cb(new Error('network'));};
+  xhr.send(data!=null?JSON.stringify(data):null);
 }
 function savePhoto(id,b64){
   _photos[id]=b64;
@@ -957,31 +963,6 @@ function injectPhotos(obj){
   return r;
 }
 
-function fbRead(path,cb){
-  var xhr=new XMLHttpRequest();
-  xhr.open('GET',FB+path+'.json?t='+Date.now(),true);
-  xhr.timeout=15000;
-  xhr.onreadystatechange=function(){
-    if(xhr.readyState!==4)return;
-    if(xhr.status===200){try{cb(null,JSON.parse(xhr.responseText));}catch(e){cb(e,null);}}
-    else cb(new Error('HTTP '+xhr.status),null);
-  };
-  xhr.ontimeout=xhr.onerror=function(){cb(new Error('network'),null);};
-  xhr.send();
-}
-function fbWrite(path,data,cb){
-  var xhr=new XMLHttpRequest();
-  xhr.open('PUT',FB+path+'.json',true);
-  xhr.setRequestHeader('Content-Type','application/json');
-  xhr.timeout=15000;
-  xhr.onreadystatechange=function(){
-    if(xhr.readyState!==4)return;
-    if(xhr.status===200){if(cb)cb(null);}
-    else{if(cb)cb(new Error('HTTP '+xhr.status));}
-  };
-  xhr.ontimeout=xhr.onerror=function(){if(cb)cb(new Error('network'));};
-  xhr.send(JSON.stringify(data));
-}
 
 function dataHash(d){
   try{
@@ -1274,14 +1255,13 @@ function loginEdu(acc){
   session.role='edu';
   session.eduId=acc.id;
   session.allowedSites=acc.sites||['clem','rdh'];
-  document.body.classList.remove('is-admin');
+  document.body.classList.remove('is-admin','is-admin-rdv');
   document.body.classList.add('edu-mode');
   document.getElementById('screen-login').style.display='none';
-  document.getElementById('role-badge').textContent='Educateur';
-  // Admin panel button hidden in edu mode already via css
+  document.getElementById('role-badge').textContent='Personnel';
   document.getElementById('btn-admin-panel').style.display='none';
   showTopbar();
-  startSync();
+  // Afficher immédiatement avec données locales
   if(session.allowedSites.length===1){
     var sid=session.allowedSites[0];
     session.siteId=sid;
@@ -1294,6 +1274,8 @@ function loginEdu(acc){
   } else {
     showSiteChoice();
   }
+  // Sync Firebase en arrière-plan
+  startSync();
 }
 
 function showSiteChoice(){
