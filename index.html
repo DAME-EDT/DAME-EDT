@@ -771,6 +771,13 @@ function getPhoto(id){return _photos[id]||'';}
 
 // Charger toutes les photos depuis Firebase /photos (une seule fois au démarrage)
 var _photosLoaded=false;
+// Charger les photos depuis localStorage (appelé au démarrage)
+function loadPhotos(){
+  try{
+    var r=localStorage.getItem('apaei-edt-photos');
+    if(r)_photos=JSON.parse(r);
+  }catch(e){}
+}
 function loadPhotosFromFirebase(cb){
   if(_photosLoaded){if(cb)cb();return;}
   fbRead('/photos',function(err,data){
@@ -853,8 +860,9 @@ function startPolling(){
     fbRead('/edt',function(err,data){
       if(err){
         _errCount++;
-        if(_errCount<=3)setSS('spin');
-        else setSS('err');
+        // Ne pas rester bloqué sur "Spin" trop longtemps
+        if(_errCount>3){setSS('err');}
+        else{setSS('spin');}
         return;
       }
       _errCount=0;
@@ -982,22 +990,28 @@ function loadFromFirebase(){
     });
   });
 }
+var _saveTimeout=null;
 function saveToFirebase(cb){
   _saving=true;
   _savedAt=Date.now();
-  setSS('spin');
-  // Différer le travail lourd APRÈS l'affichage instantané (via setTimeout 0)
+  // Timeout de sécurité : reset au bout de 10s même si Firebase ne répond pas
+  if(_saveTimeout)clearTimeout(_saveTimeout);
+  _saveTimeout=setTimeout(function(){
+    _saving=false;
+    setSS('err');
+  },10000);
+  // Sauvegarder en local immédiatement
+  try{localStorage.setItem('apaei-edt',JSON.stringify(S));}catch(e){}
+  // Envoyer à Firebase de façon asynchrone
   setTimeout(function(){
-    try{localStorage.setItem('apaei-edt',JSON.stringify(S));}catch(e){}
-    // Construire version légère sans photos pour Firebase
     var light={};
     try{
       var str=JSON.stringify(S);
-      // Remplacer les photos base64 par chaîne vide (regex rapide)
       str=str.replace(/"p":"data:[^"]{20,}"/g,'"p":""');
       light=JSON.parse(str);
     }catch(e){light=S;}
     fbWrite('/edt',light,function(err){
+      clearTimeout(_saveTimeout);
       _saving=false;
       if(!err){_lastHash=dataHash(light);}
       setSS(err?'err':'ok');
