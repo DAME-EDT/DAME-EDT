@@ -129,8 +129,8 @@ body.is-admin .admin-only{display:block}
 /* ── SCHEDULE TABLE ── */
 .sched-wrap{width:100%;padding:4px}
 .sched{border-collapse:separate;border-spacing:1px;background:var(--gray-border);border-radius:8px;overflow:hidden;width:100%;table-layout:fixed;height:100%}
-.s-corner{background:var(--blue);padding:10px 14px;vertical-align:middle;width:100px}
-.s-corner-label{font-size:26px;font-weight:800;color:var(--white);line-height:1}
+.s-corner{background:var(--blue);padding:10px 12px;vertical-align:middle;width:110px;min-width:110px}
+.s-corner-label{font-size:22px;font-weight:800;color:var(--white);line-height:1.15;word-break:break-word;hyphens:auto}
 .s-colhead{background:var(--white);vertical-align:top;padding:0;width:auto}
 .s-colinner{padding:7px 8px 6px;display:flex;flex-direction:column;gap:5px}
 .s-sortiecol{background:#f9fafb;width:auto}
@@ -152,7 +152,7 @@ body.is-admin .admin-only{display:block}
 .act-lbl-ro{font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;border:1px solid var(--gray-border);background:var(--white);color:var(--text2);display:inline-block}
 .add-act-btn{font-size:10px;color:var(--gray);background:none;border:1px dashed var(--gray-border);border-radius:4px;padding:2px 6px}
 .add-act-btn:hover{border-color:var(--blue);color:var(--blue)}
-.s-rowhead{background:var(--blue);color:var(--white);text-align:center;padding:10px 8px;vertical-align:middle;white-space:nowrap;width:100px}
+.s-rowhead{background:var(--blue);color:var(--white);text-align:center;padding:10px 6px;vertical-align:middle;width:110px;min-width:110px}
 .s-rowhead.apm{background:var(--blue-light)}
 .s-rowhead.sec{padding:4px 14px;text-align:left}
 .s-rowhead.sec.apm{background:var(--blue-light)}
@@ -276,7 +276,65 @@ body.edu-mode .add-act-btn,.edu-mode .s-addcolbtn,.edu-mode .rp-add{display:none
 body.edu-mode .chip .cx{opacity:0}
 body.edu-mode .chip:hover .cx{opacity:1}
 
-@media print{
+/* ── MODULE TRANSPORT ── */
+#screen-transport{display:none;flex:1;overflow:auto;flex-direction:column;background:var(--gray-light)}
+.transport-header{background:#374151;color:var(--white);padding:14px 20px;display:flex;align-items:center;gap:14px;flex-shrink:0}
+.transport-header h2{font-size:16px;font-weight:700;flex:1}
+.transport-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;padding:14px}
+.transport-card{background:var(--white);border-radius:10px;border:1.5px solid var(--gray-border);overflow:hidden}
+.transport-card-header{padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--white);display:flex;align-items:center;justify-content:space-between}
+.transport-card-body{padding:8px 14px}
+.t-matin-aller .transport-card-header{background:#1d4ed8}
+.t-soir-retour .transport-card-header{background:#b91c1c}
+.t-vehicule .transport-card-header{background:#374151}
+.transport-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f3f4f6;font-size:12px}
+.transport-row:last-child{border:none}
+.transport-driver{font-weight:700;color:var(--blue);min-width:80px}
+.transport-vehicle{font-size:10px;color:var(--gray);font-style:italic}
+.transport-persons{display:flex;flex-wrap:wrap;gap:4px;flex:1}
+.transport-chip{display:inline-flex;align-items:center;gap:4px;background:var(--blue-pale);border:1px solid #c3d4e9;border-radius:4px;padding:2px 7px;font-size:11px;font-weight:600;cursor:grab}
+.transport-chip img,.transport-chip-av{width:18px;height:18px;border-radius:50%;object-fit:cover;background:#e5e7eb;display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:var(--gray)}
+.transport-add-btn{font-size:10px;background:none;border:1px dashed var(--gray-border);border-radius:4px;padding:2px 7px;color:var(--gray);cursor:pointer}
+.transport-add-btn:hover{border-color:var(--blue);color:var(--blue)}
+.trajet-section{margin-bottom:6px}
+.trajet-label{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+
+/* ── MODULE REPAS ── *//* ── MODULE REPAS ── */
+#screen-repas{display:none;flex:1;overflow:auto;flex-direction:column;background:var(--white)}
+.repas-header{background:var(--blue);color:var(--white);padding:14px 20px;display:flex;align-items:center;gap:14px;flex-shrink:0}
+.repas-header h2{font-size:16px;font-weight:700;flex:1}
+.repas-back{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);color:var(--white);border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600}
+.repas-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;padding:16px}
+.repas-card{background:var(--white);border:1.5px solid var(--gray-border);border-radius:10px;overflow:hidden}
+.repas-card-header{padding:10px 14px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--white);display:flex;align-items:center;justify-content:space-between}
+.repas-card-body{padding:10px 14px}
+.repas-person-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f3f4f6;font-size:13px}
+.repas-person-row:last-child{border:none}
+.repas-person-avatar{width:28px;height:28px;border-radius:50%;background:#e5e7eb;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--gray);overflow:hidden;flex-shrink:0}
+.repas-person-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.repas-person-name{font-weight:600;flex:1}
+.repas-info-tag{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;white-space:nowrap}
+.repas-empty{color:var(--gray);font-size:12px;font-style:italic;padding:8px 0}
+.repas-impro{border-color:#2563eb}.repas-impro .repas-card-header{background:#2563eb}
+.repas-ext{border-color:#16a34a}.repas-ext .repas-card-header{background:#16a34a}
+.repas-college{border-color:#9333ea}.repas-college .repas-card-header{background:#9333ea}
+.repas-allergie{border-color:#dc2626}.repas-allergie .repas-card-header{background:#dc2626}
+.repas-moins12{border-color:#ea580c}.repas-moins12 .repas-card-header{background:#ea580c}
+.repas-edit-btn{background:rgba(255,255,255,.25);border:none;color:var(--white);font-size:11px;padding:3px 8px;border-radius:4px;cursor:pointer}
+.repas-edit-btn:hover{background:rgba(255,255,255,.4)}
+.s-repas-banner{cursor:pointer;transition:opacity .15s}
+.s-repas-banner:hover{opacity:.85}
+
+/* Modal repas */
+.repas-modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.repas-check-row{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13px}
+.repas-check-row input[type=checkbox]{width:auto;margin:0}
+.repas-input-row{margin-bottom:10px}
+.repas-input-row label{display:block;font-size:11px;font-weight:600;color:var(--gray);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em}
+.repas-input-row input,.repas-input-row textarea{width:100%;border:1.5px solid var(--gray-border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:var(--font)}
+.repas-input-row textarea{height:60px;resize:vertical}
+
+@media print{@media print{
   #topbar,#navtabs,#rpanel,.admin-only,#daytabs{display:none!important}
   #layout{height:auto;display:block}.main{overflow:visible}
   .page{display:block!important;page-break-after:always}
@@ -302,8 +360,8 @@ body.edu-mode .chip:hover .cx{opacity:1}
       <span class="btn-role">Accès complet — gestion à distance</span>
     </button>
     <button class="login-btn edu" onclick="loginEduDirect()">
-      Educateur — Consultation
-      <span class="btn-role">Affichage et placement des jeunes</span>
+      Personnel — Consultation
+      <span class="btn-role">Consultation — placement des jeunes</span>
     </button>
   </div>
 </div>
@@ -344,6 +402,7 @@ body.edu-mode .chip:hover .cx{opacity:1}
   <span class="top-role" id="role-badge">—</span>
   <span id="sync-badge">—</span>
   <button class="tbtn admin-only" onclick="showAdmin()" id="btn-admin-panel">Gestion</button>
+  <button class="tbtn" onclick="openTransport()" style="background:rgba(55,65,81,.4);border-color:rgba(255,255,255,.2)">Transport</button>
   <button class="tbtn admin-only" onclick="window.print()">Imprimer</button>
   <button class="tbtn danger" onclick="doLogout()">Déconnexion</button>
 </div>
@@ -361,6 +420,26 @@ body.edu-mode .chip:hover .cx{opacity:1}
   </button>
   <div class="cat-header" id="cat-site-label">Route d'Honfleur — Catégories</div>
   <div class="cat-grid" id="cat-grid"></div>
+</div>
+
+<!-- ÉCRAN TRANSPORT -->
+<div id="screen-transport">
+  <div class="transport-header">
+    <button class="repas-back" onclick="closeTransport()">&#8592; Retour</button>
+    <h2>Transport</h2>
+    <span id="transport-site-label" style="font-size:12px;opacity:.7"></span>
+  </div>
+  <div class="transport-grid" id="transport-grid"></div>
+</div>
+
+<!-- ÉCRAN REPAS -->
+<div id="screen-repas">
+  <div class="repas-header">
+    <button class="repas-back" onclick="closeRepas()">&#8592; Retour</button>
+    <h2 id="repas-title">Repas du jour</h2>
+    <span id="repas-day-label" style="font-size:12px;opacity:.7"></span>
+  </div>
+  <div class="repas-grid" id="repas-grid"></div>
 </div>
 
 <!-- LAYOUT (schedule) -->
@@ -407,6 +486,53 @@ body.edu-mode .chip:hover .cx{opacity:1}
   </div>
 </div>
 
+<!-- Modal info repas -->
+<div id="m-repas-person" class="mbk">
+  <div class="modal" style="width:440px">
+    <h3 id="mrp-title">Informations repas</h3>
+    <input type="hidden" id="mrp-yid">
+    <div class="repas-modal-grid">
+      <div>
+        <div class="repas-input-row">
+          <label>Lieu du repas</label>
+          <select id="mrp-lieu" style="width:100%;border:1.5px solid var(--gray-border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:var(--font)">
+            <option value="">Non renseigné</option>
+            <option value="impro">A l'IMPRO</option>
+            <option value="ext">Repas extérieur</option>
+            <option value="college">Au collège</option>
+            <option value="autre">Autre</option>
+          </select>
+        </div>
+        <div class="repas-input-row">
+          <label>Précision lieu</label>
+          <input type="text" id="mrp-lieu-detail" placeholder="Ex: Restaurant, domicile...">
+        </div>
+      </div>
+      <div>
+        <div class="repas-check-row"><input type="checkbox" id="mrp-moins12"><label for="mrp-moins12">Moins de 12 ans</label></div>
+        <div class="repas-check-row"><input type="checkbox" id="mrp-allergie"><label for="mrp-allergie">Allergènes</label></div>
+        <div class="repas-input-row" id="mrp-allergie-detail-wrap" style="display:none">
+          <label>Détail allergènes</label>
+          <input type="text" id="mrp-allergie-detail" placeholder="Ex: Gluten, lactose...">
+        </div>
+        <div class="repas-check-row"><input type="checkbox" id="mrp-regime"><label for="mrp-regime">Régime spécial</label></div>
+        <div class="repas-input-row" id="mrp-regime-detail-wrap" style="display:none">
+          <label>Détail régime</label>
+          <input type="text" id="mrp-regime-detail" placeholder="Ex: Sans sel, mixé...">
+        </div>
+      </div>
+    </div>
+    <div class="repas-input-row" style="margin-top:6px">
+      <label>Notes complémentaires</label>
+      <textarea id="mrp-notes" placeholder="Toute information utile pour le repas..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="mbtn" onclick="cl('m-repas-person')">Annuler</button>
+      <button class="mbtn prim" onclick="saveRepasInfo()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal colonne -->
 <div id="m-col" class="mbk">
   <div class="modal">
@@ -448,7 +574,7 @@ body.edu-mode .chip:hover .cx{opacity:1}
 // ════════════════════════════════════════════════
 // CONFIGURATION
 // ════════════════════════════════════════════════
-var FB = 'https://emploi-du-temps-c6063-default-rtdb.europe-west1.firebasedatabase.app';
+// Firebase remplacé par API locale (voir API_URL ci-dessus)
 var ADMIN_PW = 'EDT2026';   // Mot de passe administrateur
 
 // Sites et catégories
@@ -558,8 +684,16 @@ function sitePersons(){
   if(session.siteId==='rdh')  return (S.data.rdh&&S.data.rdh.persons)||{young:[],edu:[]};
   return {young:[],edu:[]};
 }
-function getYoungs(){ return sanitizeArr(sitePersons().young); }
-function getEdus(){   return sanitizeArr(sitePersons().edu); }
+function getYoungs(){
+  return sanitizeArr(sitePersons().young).sort(function(a,b){
+    return (a.n||'').localeCompare(b.n||'','fr',{sensitivity:'base'});
+  });
+}
+function getEdus(){
+  return sanitizeArr(sitePersons().edu).sort(function(a,b){
+    return (a.n||'').localeCompare(b.n||'','fr',{sensitivity:'base'});
+  });
+}
 function getP(type,id){ return (type==='young'?getYoungs():getEdus()).find(function(p){return p.id===id}); }
 
 function cntP(type,id){
@@ -587,16 +721,40 @@ function cntP(type,id){
 }
 
 // ════════════════════════════════════════════════
-// FIREBASE — Split léger/photos
 // ════════════════════════════════════════════════
-var _saving=false;
-var _savedAt=0; // timestamp de la dernière sauvegarde locale
-var _lastHash='';
-var _photos={}; // stockage local des photos : {id: base64}
+// API LOCALE (PostgreSQL)
+// Changez API_URL selon votre installation :
+//   En local Windows    → http://localhost:3000
+//   Sur réseau interne  → http://192.168.x.x:3000
+// ════════════════════════════════════════════════
+var API_URL = 'http://localhost:3000';
 
-// ── Gestion photos : localStorage + Firebase /photos ──
-function loadPhotos(){
-  try{var r=localStorage.getItem('apaei-edt-photos');if(r)_photos=JSON.parse(r);}catch(e){}
+function apiCall(method,path,data,cb){
+  var xhr=new XMLHttpRequest();
+  xhr.open(method,API_URL+path,true);
+  xhr.setRequestHeader('Content-Type','application/json');
+  xhr.timeout=15000;
+  xhr.onreadystatechange=function(){
+    if(xhr.readyState!==4)return;
+    if(xhr.status>=200&&xhr.status<300){
+      try{cb(null,xhr.responseText?JSON.parse(xhr.responseText):null);}
+      catch(e){cb(e,null);}
+    } else {
+      cb(new Error('HTTP '+xhr.status),null);
+    }
+  };
+  xhr.ontimeout=function(){cb(new Error('timeout'),null);};
+  xhr.onerror=function(){cb(new Error('network'),null);};
+  xhr.send(data!=null?JSON.stringify(data):null);
+}
+function fbRead(path,cb){
+  // /edt → GET /edt  |  /photos → GET /photos
+  apiCall('GET',path,null,cb);
+}
+function fbWrite(path,data,cb){
+  // /edt → PUT /edt  |  /photos/ID → PUT /photos/ID  |  null data → DELETE
+  if(data===null){apiCall('DELETE',path,null,cb);}
+  else{apiCall('PUT',path,data,cb);}
 }
 function savePhoto(id,b64){
   _photos[id]=b64;
@@ -614,16 +772,13 @@ function getPhoto(id){return _photos[id]||'';}
 // Charger toutes les photos depuis Firebase /photos (une seule fois au démarrage)
 var _photosLoaded=false;
 function loadPhotosFromFirebase(cb){
-  if(_photosLoaded){if(cb)cb();return;} // ne charger qu'une seule fois
+  if(_photosLoaded){if(cb)cb();return;}
   fbRead('/photos',function(err,data){
     _photosLoaded=true;
     if(err||!data){if(cb)cb();return;}
-    var photos=data;
-    if(typeof photos==='object'&&!Array.isArray(photos)){
-      Object.keys(photos).forEach(function(id){
-        if(photos[id]&&photos[id].length>10){
-          _photos[id]=photos[id];
-        }
+    if(typeof data==='object'&&!Array.isArray(data)){
+      Object.keys(data).forEach(function(id){
+        if(data[id]&&data[id].length>10)_photos[id]=data[id];
       });
     }
     try{localStorage.setItem('apaei-edt-photos',JSON.stringify(_photos));}catch(e){}
@@ -1003,7 +1158,7 @@ function showTopbar(){
   document.getElementById('topbar').style.display='flex';
 }
 function hideAllScreens(){
-  ['screen-site','screen-cat','layout','screen-admin'].forEach(function(id){
+  ['screen-site','screen-cat','layout','screen-admin','screen-repas','screen-transport'].forEach(function(id){
     var el=document.getElementById(id);
     el.style.display='none';
   });
@@ -1464,12 +1619,24 @@ function renderAdmin(){
 }
 
 function manualSave(){
-  if(!S.backups)S.backups=[];
-  S.backups.push({date:new Date().toLocaleString('fr-FR'),data:JSON.stringify(S.data)});
-  if(S.backups.length>10)S.backups=S.backups.slice(-10);
-  saveToFirebase(function(err){
-    if(!err){renderAdmin();ntf('Sauvegarde créée.');}
-    else ntf('Erreur lors de la sauvegarde.');
+  var label='Sauvegarde du '+new Date().toLocaleString('fr-FR');
+  // Sauvegarde via l'API /backups (séparée du planning principal)
+  apiCall('POST','/backups',{label:label,data:S},function(err){
+    if(!err){
+      // Mettre à jour l'affichage
+      var log=document.getElementById('save-log');
+      if(log)log.textContent='Dernière sauvegarde : '+label;
+      ntf('Sauvegarde créée.');
+    } else {
+      // Fallback: sauvegarder dans localStorage
+      try{
+        var bk=JSON.parse(localStorage.getItem('apaei-backups')||'[]');
+        bk.unshift({date:label,data:JSON.stringify(S)});
+        if(bk.length>5)bk=bk.slice(0,5);
+        localStorage.setItem('apaei-backups',JSON.stringify(bk));
+        ntf('Sauvegarde locale créée (hors ligne).');
+      }catch(e){ntf('Erreur de sauvegarde.');}
+    }
   });
 }
 
@@ -1737,6 +1904,229 @@ function scheduleWeeklyBackup(){
     manualSave();
     localStorage.setItem('apaei-lastbk',String(now));
   }
+}
+
+// ════════════════════════════════════════════════
+// MODULE TRANSPORT
+// S.transportData[siteId] = {
+//   trajets: [{id, chauffeur, vehicule, immatriculation, tel, young_ids:[]}]
+//   matin_aller, matin_retour, soir_aller, soir_retour: mêmes structure
+// }
+// ════════════════════════════════════════════════
+function getTransportData(){
+  if(!S.transportData)S.transportData={};
+  var sid=session.siteId||'clem';
+  if(!S.transportData[sid])S.transportData[sid]={trajets:[]};
+  return S.transportData[sid];
+}
+
+function openTransport(){
+  hideAllScreens();
+  document.getElementById('screen-transport').style.display='flex';
+  document.getElementById('daytabs').style.display='none';
+  var sid=session.siteId||'clem';
+  document.getElementById('transport-site-label').textContent=SITES[sid]?SITES[sid].name:'';
+  renderTransport();
+}
+function closeTransport(){
+  hideAllScreens();
+  document.getElementById('layout').style.display='flex';
+  document.getElementById('daytabs').style.display='block';
+}
+
+function renderTransport(){
+  var td=getTransportData();
+  var trajets=sanitizeArr(td.trajets);
+  var youngs=getYoungs();
+  var grid=document.getElementById('transport-grid');
+  grid.innerHTML='';
+
+  // ── Résumé chauffeurs ──
+  var resumeCard=document.createElement('div');
+  resumeCard.className='transport-card t-vehicule';
+  var rows=trajets.map(function(t){
+    var persons=sanitizeArr(t.young_ids).map(function(yid){
+      var y=getP('young',yid);if(!y)return'';
+      var av=y.p?'<img src="'+y.p+'" style="width:18px;height:18px;border-radius:50%;object-fit:cover">':
+        '<div class="transport-chip-av">'+ini(y.n)+'</div>';
+      return '<div class="transport-chip">'+av+' '+y.n+'</div>';
+    }).join('');
+    var delBtn=session.role==='admin'?'<button onclick="delTrajet(\''+t.id+'\')" style="background:none;border:none;color:#b91c1c;font-size:11px;cursor:pointer">✕</button>':'';
+    return '<div class="transport-row">'+
+      '<div class="transport-driver">'+t.chauffeur+'</div>'+
+      '<div style="flex:1"><div class="transport-vehicle">'+t.vehicule+(t.immatriculation?' ('+t.immatriculation+')':'')+(t.tel?' — '+t.tel:'')+'</div>'+
+      '<div class="transport-persons">'+persons+'</div></div>'+
+      delBtn+'</div>';
+  }).join('');
+  resumeCard.innerHTML='<div class="transport-card-header">Trajets &amp; Chauffeurs <span>'+trajets.length+'</span></div>'+
+    '<div class="transport-card-body">'+(rows||'<div class="repas-empty">Aucun trajet enregistré</div>')+
+    (session.role==='admin'?'<button class="transport-add-btn" onclick="openAddTrajet()" style="margin-top:8px;width:100%;padding:6px">+ Ajouter un trajet</button>':'')+
+    '</div>';
+  grid.appendChild(resumeCard);
+
+  // ── Non assignés ──
+  var assignedIds=[];
+  trajets.forEach(function(t){sanitizeArr(t.young_ids).forEach(function(id){if(assignedIds.indexOf(id)<0)assignedIds.push(id);});});
+  var notAssigned=youngs.filter(function(y){return assignedIds.indexOf(y.id)<0;});
+  var naCard=document.createElement('div');
+  naCard.className='transport-card';
+  naCard.style.borderColor='#f59e0b';
+  var naRows=notAssigned.map(function(y){
+    var av=y.p?'<img src="'+y.p+'" style="width:18px;height:18px;border-radius:50%;object-fit:cover">':
+      '<div class="transport-chip-av">'+ini(y.n)+'</div>';
+    return '<div class="transport-chip" style="background:#fff7ed;border-color:#fcd34d">'+av+' '+y.n+'</div>';
+  }).join('');
+  naCard.innerHTML='<div class="transport-card-header" style="background:#f59e0b">Non assignés <span>'+notAssigned.length+'</span></div>'+
+    '<div class="transport-card-body"><div class="transport-persons">'+(naRows||'<div class="repas-empty">Tous les jeunes sont assignés</div>')+'</div></div>';
+  grid.appendChild(naCard);
+}
+
+function openAddTrajet(){
+  var chauffeur=prompt('Nom du chauffeur :');
+  if(!chauffeur)return;
+  var vehicule=prompt('Véhicule (ex: DACIA DV 336 KT) :','');
+  var immat=prompt('Immatriculation :','');
+  var tel=prompt('Téléphone chauffeur :','');
+  var td=getTransportData();
+  if(!td.trajets)td.trajets=[];
+  td.trajets.push({id:uid(),chauffeur:chauffeur,vehicule:vehicule||'',immatriculation:immat||'',tel:tel||'',young_ids:[]});
+  render();saveToFirebase();renderTransport();
+  ntf('Trajet créé. Rechargez pour assigner des jeunes.');
+}
+
+function delTrajet(id){
+  if(!confirm('Supprimer ce trajet ?'))return;
+  var td=getTransportData();
+  td.trajets=sanitizeArr(td.trajets).filter(function(t){return t.id!==id;});
+  render();saveToFirebase();renderTransport();
+}
+
+// ════════════════════════════════════════════════
+// MODULE REPAS
+// ════════════════════════════════════════════════
+
+// Données repas: S.repasInfo = { [yid]: {lieu, lieuDetail, moins12, allergie, allergieDetail, regime, regimeDetail, notes} }
+function getRepasInfo(yid){ return (S.repasInfo||{})[yid]||{}; }
+
+function saveRepasInfo(){
+  var yid=document.getElementById('mrp-yid').value;
+  if(!yid)return;
+  if(!S.repasInfo)S.repasInfo={};
+  S.repasInfo[yid]={
+    lieu:    document.getElementById('mrp-lieu').value,
+    lieuDetail: document.getElementById('mrp-lieu-detail').value.trim(),
+    moins12: document.getElementById('mrp-moins12').checked,
+    allergie: document.getElementById('mrp-allergie').checked,
+    allergieDetail: document.getElementById('mrp-allergie-detail').value.trim(),
+    regime:  document.getElementById('mrp-regime').checked,
+    regimeDetail: document.getElementById('mrp-regime-detail').value.trim(),
+    notes:   document.getElementById('mrp-notes').value.trim()
+  };
+  cl('m-repas-person');
+  render();saveToFirebase();
+  ntf('Informations repas sauvegardées.');
+}
+
+function openRepasInfo(yid,e){
+  if(e)e.stopPropagation();
+  var y=getP('young',yid);if(!y)return;
+  var ri=getRepasInfo(yid);
+  document.getElementById('mrp-yid').value=yid;
+  document.getElementById('mrp-title').textContent='Repas — '+y.n;
+  document.getElementById('mrp-lieu').value=ri.lieu||'';
+  document.getElementById('mrp-lieu-detail').value=ri.lieuDetail||'';
+  document.getElementById('mrp-moins12').checked=!!ri.moins12;
+  document.getElementById('mrp-allergie').checked=!!ri.allergie;
+  document.getElementById('mrp-allergie-detail').value=ri.allergieDetail||'';
+  document.getElementById('mrp-allergie-detail-wrap').style.display=ri.allergie?'block':'none';
+  document.getElementById('mrp-regime').checked=!!ri.regime;
+  document.getElementById('mrp-regime-detail').value=ri.regimeDetail||'';
+  document.getElementById('mrp-regime-detail-wrap').style.display=ri.regime?'block':'none';
+  document.getElementById('mrp-notes').value=ri.notes||'';
+  op('m-repas-person');
+}
+
+// Toggle allergène detail
+document.addEventListener('change',function(e){
+  if(e.target.id==='mrp-allergie'){
+    document.getElementById('mrp-allergie-detail-wrap').style.display=e.target.checked?'block':'none';
+  }
+  if(e.target.id==='mrp-regime'){
+    document.getElementById('mrp-regime-detail-wrap').style.display=e.target.checked?'block':'none';
+  }
+});
+
+function openRepas(){
+  // Collecter tous les jeunes présents aujourd'hui
+  var d=cur();if(!d)return;
+  var dayLabel=DAYS.find(function(x){return x.id===currentDay;}).l;
+  document.getElementById('repas-title').textContent='Repas — '+dayLabel;
+  document.getElementById('repas-day-label').textContent=new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+
+  // Trouver tous les jeunes placés aujourd'hui
+  var youngIds=[];
+  Object.keys(d.cells||{}).forEach(function(k){
+    if(k.indexOf(currentDay+'__')===0){
+      sanitizeArr(d.cells[k]).forEach(function(yid){
+        if(youngIds.indexOf(yid)<0)youngIds.push(yid);
+      });
+    }
+  });
+
+  // Catégoriser
+  var cats={
+    impro:{label:"Repas à l'IMPRO",cls:'repas-impro',items:[]},
+    ext:{label:'Repas extérieur',cls:'repas-ext',items:[]},
+    college:{label:'Au collège',cls:'repas-college',items:[]},
+    allergie:{label:'Allergènes',cls:'repas-allergie',items:[]},
+    moins12:{label:'Moins de 12 ans',cls:'repas-moins12',items:[]},
+    autre:{label:'Autres / Non renseigné',cls:'',items:[]}
+  };
+
+  youngIds.forEach(function(yid){
+    var y=getP('young',yid);if(!y)return;
+    var ri=getRepasInfo(yid);
+    var lieu=ri.lieu||'';
+    if(lieu==='impro')cats.impro.items.push({y:y,ri:ri,yid:yid});
+    else if(lieu==='ext')cats.ext.items.push({y:y,ri:ri,yid:yid});
+    else if(lieu==='college')cats.college.items.push({y:y,ri:ri,yid:yid});
+    else cats.autre.items.push({y:y,ri:ri,yid:yid});
+    if(ri.allergie)cats.allergie.items.push({y:y,ri:ri,yid:yid});
+    if(ri.moins12)cats.moins12.items.push({y:y,ri:ri,yid:yid});
+  });
+
+  var grid=document.getElementById('repas-grid');
+  grid.innerHTML='';
+  Object.values(cats).forEach(function(cat){
+    var card=document.createElement('div');
+    card.className='repas-card '+(cat.cls||'');
+    var editBtn=session.role==='admin'?'<button class="repas-edit-btn" onclick="">&#9998;</button>':'';
+    var rows=cat.items.map(function(item){
+      var av=item.y.p?'<img src="'+item.y.p+'">':ini(item.y.n);
+      var tags='';
+      if(item.ri.allergie)tags+='<span class="repas-info-tag" style="background:#fee2e2;color:#b91c1c">'+( item.ri.allergieDetail||'Allergène')+'</span> ';
+      if(item.ri.moins12)tags+='<span class="repas-info-tag" style="background:#fff7ed;color:#ea580c">-12 ans</span> ';
+      if(item.ri.regime)tags+='<span class="repas-info-tag" style="background:#f0fdf4;color:#16a34a">'+(item.ri.regimeDetail||'Régime')+'</span> ';
+      if(item.ri.notes)tags+='<span class="repas-info-tag" style="background:#f5f3ff;color:#7c3aed" title="'+item.ri.notes+'">&#9432;</span>';
+      var editBtn2=session.role==='admin'?'<button onclick="openRepasInfo(\''+item.yid+'\',event)" style="background:none;border:1px solid var(--gray-border);border-radius:4px;padding:2px 6px;font-size:10px;cursor:pointer">&#9998;</button>':'';
+      return '<div class="repas-person-row"><div class="repas-person-avatar">'+av+'</div><span class="repas-person-name">'+item.y.n+'</span>'+tags+editBtn2+'</div>';
+    }).join('');
+    card.innerHTML='<div class="repas-card-header">'+cat.label+' <span style="font-size:16px;font-weight:700">'+cat.items.length+'</span></div>'+
+      '<div class="repas-card-body">'+(rows||'<div class="repas-empty">Aucun</div>')+'</div>';
+    grid.appendChild(card);
+  });
+
+  // Afficher l'écran repas
+  hideAllScreens();
+  document.getElementById('screen-repas').style.display='flex';
+  document.getElementById('daytabs').style.display='block';
+}
+
+function closeRepas(){
+  hideAllScreens();
+  document.getElementById('layout').style.display='flex';
+  document.getElementById('daytabs').style.display='block';
+  setCtx(SITES[session.siteId]?SITES[session.siteId].name:'—');
 }
 
 document.addEventListener('keydown',function(e){
