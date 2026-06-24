@@ -846,7 +846,12 @@ function getEdus(){
     return (a.n||'').localeCompare(b.n||'','fr',{sensitivity:'base'});
   });
 }
-function getP(type,id){ return (type==='young'?getYoungs():getEdus()).find(function(p){return p.id===id}); }
+function getP(type,id){
+  var arr=type==='young'?sanitizeArr(sitePersons().young):sanitizeArr(sitePersons().edu);
+  var p=arr.find(function(x){return x&&x.id===id;})||null;
+  if(p&&!p.p&&_photos[p.id])p.p=_photos[p.id];
+  return p;
+}
 
 function cntP(type,id){
   var n=0;
@@ -978,44 +983,39 @@ function startSSE(){startPolling();}
 
 function startPolling(){
   if(syncTimer)clearInterval(syncTimer);
-  var _errCount=0;
+  var errCount=0;
   syncTimer=setInterval(function(){
     if(_saving)return;
+    if(Date.now()-_savedAt<2000)return; // attendre 2s après une sauvegarde locale
     fbRead('/edt',function(err,data){
       if(err){
-        _errCount++;
-        // Ne pas rester bloqué sur "Spin" trop longtemps
-        if(_errCount>3){setSS('err');}
-        else{setSS('spin');}
+        errCount++;
+        setSS(errCount>2?'err':'spin');
         return;
       }
-      _errCount=0;
-      if(!data)return;
-      // Ignorer les données Firebase pendant 2 secondes après une sauvegarde locale
-      // pour éviter que le poll n'écrase l'affichage local
-      if(Date.now()-_savedAt<1500){setSS('ok');return;}
+      errCount=0;
+      if(!data){setSS('ok');return;}
       var h=dataHash(data);
       if(h===_lastHash){setSS('ok');return;}
       _lastHash=h;
       sanitizeAll(data);
       S=Object.assign(S,data);
-      // Réinjecter photos
-      function pollReinject(obj){
+      // Réinjecter photos locales dans les personnes
+      function reInject(obj){
         if(!obj||typeof obj!=='object')return;
-        if(Array.isArray(obj)){obj.forEach(pollReinject);return;}
-        if(obj.id&&'p' in obj&&_photos[obj.id])obj.p=_photos[obj.id];
-        Object.values(obj).forEach(pollReinject);
+        if(Array.isArray(obj)){obj.forEach(reInject);return;}
+        if(obj.id&&typeof obj.p==='string'&&_photos[obj.id])obj.p=_photos[obj.id];
+        Object.values(obj).forEach(reInject);
       }
-      pollReinject(S);
-      try{localStorage.setItem('apaei-edt',JSON.stringify(S));}catch(ex){}
+      reInject(S);
+      try{localStorage.setItem('apaei-edt',JSON.stringify(S));}catch(e){}
       setSS('ok');
-      // Mise à jour partielle : seulement le jour courant + le panel
       renderPanel();
-      var curPage=document.querySelector('.page.on');
-      if(curPage){curPage.innerHTML=buildDay(currentDay);}
-      else{renderPages();}
+      var pg=document.querySelector('.page.on');
+      if(pg)pg.innerHTML=buildDay(currentDay);
+      else renderPages();
     });
-  },2000);
+  },5000);
 }
 
 function sanitizeArr(v){
@@ -1117,50 +1117,40 @@ function loadFromFirebase(){
     });
   });
 }
-var _saveTimeout=null;
 function saveToFirebase(cb){
   _saving=true;
   _savedAt=Date.now();
-  // Timeout de sécurité : reset au bout de 10s même si Firebase ne répond pas
-  if(_saveTimeout)clearTimeout(_saveTimeout);
-  _saveTimeout=setTimeout(function(){
-    _saving=false;
-    setSS('err');
-  },10000);
-  // Sauvegarder en local immédiatement
+  setSS('spin');
+  // Sauvegarde locale immédiate
   try{localStorage.setItem('apaei-edt',JSON.stringify(S));}catch(e){}
-  // Envoyer à Firebase de façon asynchrone
+  // Envoyer version SANS photos à Firebase
   setTimeout(function(){
-    var light={};
-    try{
-      var str=JSON.stringify(S);
-      // Supprimer TOUTES les photos base64 avant envoi Firebase
-      str=str.replace(/"p":"data:[^"]{10,}"/g,'"p":""');
-      // Supprimer aussi les backups volumineux
-      light=JSON.parse(str);
-      delete light.backups; // backups stockés séparément
-      // Vérification taille: refuser si > 500KB
-      var lightStr=JSON.stringify(light);
-      if(lightStr.length>500000){
-        console.warn('Données trop volumineuses ('+Math.round(lightStr.length/1024)+'KB), photos non supprimées?');
-        // Forcer suppression photos en profondeur
-        function deepStrip(obj){
-          if(!obj||typeof obj!=='object')return;
-          if(Array.isArray(obj)){obj.forEach(deepStrip);return;}
-          Object.keys(obj).forEach(function(k){
-            if(k==='p'&&typeof obj[k]==='string'&&obj[k].length>100)obj[k]='';
-            else deepStrip(obj[k]);
-          });
-        }
-        deepStrip(light);
-        lightStr=JSON.stringify(light);
-        console.log('Après nettoyage:', Math.round(lightStr.length/1024)+'KB');
-      }
-    }catch(e){light={};}
+    // Copie profonde sans photos
+    function stripDeep(obj){
+      if(!obj||typeof obj!=='object')return obj;
+      if(Array.isArray(obj))return obj.map(stripDeep);
+      var r={};
+      Object.keys(obj).forEach(function(k){
+        if(k==='p'&&typeof obj[k]==='string'&&obj[k].length>50)r[k]='';
+        else r[k]=stripDeep(obj[k]);
+      });
+      return r;
+    }
+    var light=stripDeep(S);
+    delete light.backups;
+    // Vérification taille finale
+    var kb=JSON.stringify(light).length/1024;
+    if(kb>200){
+      console.warn('Payload Firebase encore lourd: '+Math.round(kb)+'KB');
+    }
+    var timeout=setTimeout(function(){
+      _saving=false;setSS('err');
+      if(cb)cb(new Error('timeout'));
+    },12000);
     fbWrite('/edt',light,function(err){
-      clearTimeout(_saveTimeout);
+      clearTimeout(timeout);
       _saving=false;
-      if(!err){_lastHash=dataHash(light);}
+      if(!err)_lastHash=dataHash(light);
       setSS(err?'err':'ok');
       if(cb)cb(err);
     });
