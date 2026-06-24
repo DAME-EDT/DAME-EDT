@@ -1858,6 +1858,19 @@ function importPhotos(e){
         photosByName=data.photos;
       } else {
         // Format direct {id:base64} ou {nom:base64}
+        if(data._type==='dame-edt-photos-by-id'&&data.photos){
+          // Import direct par ID - le plus rapide
+          Object.keys(data.photos).forEach(function(id){
+            if(data.photos[id]&&data.photos[id].length>10){
+              _photos[id]=data.photos[id];
+              count++;
+            }
+          });
+          try{localStorage.setItem('apaei-edt-photos',JSON.stringify(_photos));}catch(ex){}
+          render();renderAdmin();
+          ntf(count+' photo'+(count>1?'s':'')+' chargée'+(count>1?'s':''));
+          return;
+        }
         Object.keys(data).forEach(function(k){
           if(!k.startsWith('_')&&data[k]&&typeof data[k]==='string'&&data[k].length>10){
             photosByName[k]=data[k];
