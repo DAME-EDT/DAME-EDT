@@ -509,6 +509,17 @@ body.edu-mode .chip:hover .cx{opacity:1}
 <div id="screen-admin" style="display:none;flex-direction:column">
 
   <div class="admin-section">
+    <h2>Photos — Export / Import</h2>
+    <p style="font-size:12px;color:var(--gray);margin-bottom:10px">Exportez toutes les photos pour les sauvegarder ou les transférer sur un autre appareil.</p>
+    <div class="form-row">
+      <button class="fbtn fbtn-blue" onclick="exportPhotos()">&#8595; Exporter les photos</button>
+      <button class="fbtn fbtn-gray" onclick="document.getElementById('import-photos-inp').click()">&#8593; Importer les photos</button>
+      <input type="file" id="import-photos-inp" accept=".json" style="display:none" onchange="importPhotos(event)">
+    </div>
+    <div id="photos-count" style="font-size:12px;color:var(--gray);margin-top:8px"></div>
+  </div>
+
+  <div class="admin-section">
     <h2>Sécurité Firebase</h2>
     <p style="font-size:13px;color:var(--gray);margin-bottom:10px">
       Copiez ces règles dans Firebase Console → Realtime Database → Règles
@@ -1794,6 +1805,46 @@ function renderAdmin(){
   var log=document.getElementById('save-log');
   var bk=S.backups||[];
   log.textContent=bk.length?'Dernière sauvegarde : '+bk[bk.length-1].date:'Aucune sauvegarde enregistrée.';
+  // Photos count
+  var pc=document.getElementById('photos-count');
+  if(pc){
+    var n=Object.keys(_photos).length;
+    pc.textContent=n+' photo'+(n>1?'s':'')+' en mémoire locale.';
+  }
+}
+
+function exportPhotos(){
+  var n=Object.keys(_photos).length;
+  if(!n){ntf('Aucune photo à exporter.');return;}
+  var blob=new Blob([JSON.stringify(_photos)],{type:'application/json'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='dame-edt-photos-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  ntf(n+' photo'+(n>1?'s':'')+' exportée'+(n>1?'s':'')+' avec succès.');
+}
+
+function importPhotos(e){
+  var file=e.target.files[0];if(!file)return;
+  var r=new FileReader();
+  r.onload=function(ev){
+    try{
+      var data=JSON.parse(ev.target.result);
+      var count=0;
+      Object.keys(data).forEach(function(id){
+        if(data[id]&&data[id].length>10){
+          _photos[id]=data[id];
+          count++;
+        }
+      });
+      localStorage.setItem('apaei-edt-photos',JSON.stringify(_photos));
+      render();
+      renderAdmin();
+      ntf(count+' photo'+(count>1?'s':'')+' importée'+(count>1?'s':'')+' avec succès.');
+    }catch(ex){ntf('Import echoue: '+ex.message);}
+  };
+  r.readAsText(file);
+  e.target.value='';
 }
 
 function manualSave(){
