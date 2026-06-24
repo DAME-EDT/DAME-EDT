@@ -814,6 +814,11 @@ var currentPeriod = 'am'; // 'am' = matin, 'pm' = apres-midi
 var editPerson = null, photoData = null, editColKey = null;
 var dg = {id:null,tp:null,fr:null};
 var syncTimer = null;
+var _photos = {};       // photos locales {id: base64} — jamais dans Firebase
+var _saving = false;
+var _savedAt = 0;
+var _lastHash = '';
+var _saveTimeout = null;
 
 // ════════════════════════════════════════════════
 // HELPERS
