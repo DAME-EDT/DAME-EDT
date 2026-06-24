@@ -1821,16 +1821,55 @@ function importPhotos(e){
     try{
       var data=JSON.parse(ev.target.result);
       var count=0;
-      Object.keys(data).forEach(function(id){
-        if(data[id]&&data[id].length>10){
-          _photos[id]=data[id];
-          count++;
-        }
-      });
+
+      if(data._type==='dame-edt-photos-by-name'){
+        // Format par NOM: associer chaque photo au bon éducateur/jeune par nom
+        var photosByName=data.photos||{};
+        var allPersons=sanitizeArr(sitePersons().young).concat(sanitizeArr(sitePersons().edu));
+        // Aussi chercher dans les autres sites
+        ['clem','rdh'].forEach(function(sid){
+          if(S.data[sid]){
+            if(S.data[sid].persons){
+              sanitizeArr(S.data[sid].persons.young).forEach(function(p){if(allPersons.indexOf(p)<0)allPersons.push(p);});
+              sanitizeArr(S.data[sid].persons.edu).forEach(function(p){if(allPersons.indexOf(p)<0)allPersons.push(p);});
+            }
+          }
+        });
+        Object.keys(photosByName).forEach(function(name){
+          var photo=photosByName[name];
+          if(!photo||photo.length<10)return;
+          // Chercher la personne par nom (correspondance flexible)
+          var match=allPersons.find(function(p){
+            if(!p||!p.n)return false;
+            var pn=p.n.toLowerCase().trim();
+            var fn=name.toLowerCase().trim();
+            return pn===fn||pn.startsWith(fn)||fn.startsWith(pn)||pn.indexOf(fn)>=0;
+          });
+          if(match){
+            _photos[match.id]=photo;
+            match.p=photo;
+            count++;
+          } else {
+            // Pas trouvé par ID, stocker quand même par nom pour usage futur
+            _photos['_name_'+name]=photo;
+            count++;
+          }
+        });
+      } else {
+        // Format par ID: {id: base64}
+        Object.keys(data).forEach(function(id){
+          if(id.startsWith('_'))return;
+          if(data[id]&&data[id].length>10){
+            _photos[id]=data[id];
+            count++;
+          }
+        });
+      }
+
       localStorage.setItem('apaei-edt-photos',JSON.stringify(_photos));
       render();
-      renderAdmin();
-      ntf(count+' photo'+(count>1?'s':'')+' importée'+(count>1?'s':'')+' avec succès.');
+      if(typeof renderAdmin==='function')renderAdmin();
+      ntf(count+' photo'+(count>1?'s':'')+' importée'+(count>1?'s':'')+' avec succes.');
     }catch(ex){ntf('Import echoue: '+ex.message);}
   };
   r.readAsText(file);
