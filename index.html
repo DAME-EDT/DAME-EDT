@@ -2,6 +2,9 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#2c4a6e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -722,6 +725,14 @@ body.edu-mode .chip:hover .cx{opacity:1}
 <div class="notif" id="notif"></div>
 
 <script>
+// ═══ VARIABLES GLOBALES ═══
+var _photos={};
+// (var déclaré en haut)
+var _savedAt=0;
+// (var déclaré en haut)
+var _saveTimeout=null;
+var syncTimer=null;
+// ══════════════════════════
 // ════════════════════════════════════════════════
 // CONFIGURATION
 // ════════════════════════════════════════════════
@@ -813,12 +824,7 @@ var currentDay = 'lun';
 var currentPeriod = 'am'; // 'am' = matin, 'pm' = apres-midi
 var editPerson = null, photoData = null, editColKey = null;
 var dg = {id:null,tp:null,fr:null};
-var syncTimer = null;
-var _photos = {};       // photos locales {id: base64} — jamais dans Firebase
-var _saving = false;
-var _savedAt = 0;
-var _lastHash = '';
-var _saveTimeout = null;
+// (var déclaré en haut)
 
 // ════════════════════════════════════════════════
 // HELPERS
